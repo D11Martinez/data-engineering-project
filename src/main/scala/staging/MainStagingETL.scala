@@ -8,6 +8,7 @@ object MainStagingETL extends App {
 
   // Add your config outputs paths here
   val userStagingOutput = ""
+  val commitStagingOutPut = ""
   val eventPayloadStagingOutput = ""
 
   val spark = SparkSession.builder
@@ -23,6 +24,12 @@ object MainStagingETL extends App {
     .write
     .mode(SaveMode.Overwrite)
     .parquet(userStagingOutput)
+
+  CommitStagingETL
+    .getDataFrame(rawPullRequestsDF)
+    .write
+    .mode(SaveMode.Overwrite)
+    .parquet(commitStagingOutPut)
 
   EventPayloadStagingETL
     .getDataFrame(rawPullRequestsDF)
