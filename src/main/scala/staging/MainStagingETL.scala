@@ -4,11 +4,11 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object MainStagingETL extends App {
 
-  // Add your config paths here
+  // Add your own config paths here
   val rawPullRequestPath =
     "D:/Documents/UES/TBS115_2021/Proyecto/Datasets/github-dataset"
 
-  // Add your config outputs paths here
+  // these are the default paths
   val userStagingOutput = "src/dataset/staging/users"
   val commitStagingOutPut = "src/dataset/staging/commits"
   val eventPayloadStagingOutput = "src/dataset/staging/events-payloads"
