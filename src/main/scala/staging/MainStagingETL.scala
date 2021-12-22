@@ -3,13 +3,15 @@ package staging
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object MainStagingETL extends App {
+
   // Add your config paths here
-  val rawPullRequestPath = ""
+  val rawPullRequestPath =
+    "D:/Documents/UES/TBS115_2021/Proyecto/Datasets/github-dataset"
 
   // Add your config outputs paths here
-  val userStagingOutput = ""
-  val commitStagingOutPut = ""
-  val eventPayloadStagingOutput = ""
+  val userStagingOutput = "src/dataset/staging/users"
+  val commitStagingOutPut = "src/dataset/staging/commits"
+  val eventPayloadStagingOutput = "src/dataset/staging/events-payloads"
 
   val spark = SparkSession.builder
     .master("local[*]")
@@ -17,10 +19,11 @@ object MainStagingETL extends App {
     .getOrCreate()
 
   val rawPullRequestsDF = spark.read
+    .option("inferSchema", "true")
     .json(rawPullRequestPath)
 
   UserStagingETL
-    .getDataFrame(rawPullRequestsDF)
+    .getDataFrame(rawPullRequestsDF, spark)
     .write
     .mode(SaveMode.Overwrite)
     .parquet(userStagingOutput)
