@@ -1,7 +1,7 @@
 package staging
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{asc, col, explode}
+import org.apache.spark.sql.functions.{asc, col, date_format, explode, when}
 
 object EventPayloadStagingETL {
   def getDataFrame(rawPullRequestsDF: DataFrame): DataFrame = {
@@ -42,7 +42,8 @@ object EventPayloadStagingETL {
             .as("pull_request_assignee_id"),
           col("payload.pull_request.assignees").as(
             "pull_request_assignees_list"
-          ),
+          )
+          ,
           col("payload.pull_request.requested_reviewers")
             .as("pull_request_requested_reviewers_list"),
           col("payload.pull_request.milestone").as("pull_request_milestone"),
@@ -60,6 +61,8 @@ object EventPayloadStagingETL {
           ),
           col("payload.pull_request.head.sha").as("pull_request_head_sha"),
           col("payload.pull_request.base.sha").as("pull_request_base_sha"),
+          col("payload.pull_request.head").as("pull_request_head"),
+          col("payload.pull_request.base").as("pull_request_base"),
           col("payload.pull_request.author_association").as(
             "pull_request_author_association"
           ),
@@ -95,21 +98,28 @@ object EventPayloadStagingETL {
         )
         .withColumn("pull_request_commit_sha", col("pull_request_commit.sha"))
         .withColumn(
-          "pull_request_requested_reviewer",
-          explode(col("pull_request_requested_reviewers_list"))
+          "pull_request_requested_reviewer",when(col("pull_request_requested_reviewers_list")==="[]",-1)
+            .otherwise(explode(col("pull_request_requested_reviewers_list")))
         )
         .withColumn(
-          "pull_request_requested_reviewer_id",
-          col("pull_request_requested_reviewer.id")
+          "pull_request_requested_reviewer_id",when(col("pull_request_requested_reviewer")=!= -1,
+            col("pull_request_requested_reviewer.id")).otherwise(-1)
         )
         .withColumn(
-          "pull_request_assignees_item",
-          explode(col("pull_request_assignees_list"))
+          "pull_request_assignees_item",when(col("pull_request_assignees_list")==="[]",-1)
+            .otherwise(explode(col("pull_request_assignees_list")))
         )
         .withColumn(
-          "pull_request_assignees_id",
-          col("pull_request_assignees_item.id")
+          "pull_request_assignees_id",when(col("pull_request_assignees_item") =!= -1,
+            col("pull_request_assignees_item.id")).otherwise(-1)
         )
+        .withColumn(
+        "create_at_time_temporal",
+        date_format(col("pull_request_created_at"), "HH:mm:ss")
+      ).withColumn(
+        "create_at_date_temporal",
+        date_format(col("pull_request_created_at"), "yyyy-MM-dd")
+      )
         .drop(
           "pull_request_commits_list",
           "pull_request_commit",
