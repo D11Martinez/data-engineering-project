@@ -29,9 +29,10 @@ object MainPresentationETL extends App {
   val stagingPullRequest = spark.read.option("inferSchema", true).parquet(eventPayloadStagingOutput)
 
 
-  //stagingPullRequest.select("pull_request_id").groupBy("pull_request_id").count().show(100,false)
-  //spark.read.parquet(pullRequestPresentationOutput).select(col("pk_id")).show(20,false)
-  /*
+  //stagingPullRequest.select("pull_request_id").groupBy("pull_request_id").count().show(10,false)
+  //stagingPullRequest.select("*").show(10,false)
+  //spark.read.parquet(pullRequestFactTable).select("*").show(100,false)
+
   OrgPresentationETL.getDataFrame(stagingOrg).write.mode(SaveMode.Overwrite).parquet(orgPresentationOutput)
   println("-- ORG DIMENSION EXITO --")
 
@@ -41,24 +42,23 @@ object MainPresentationETL extends App {
   PullRequestPresentationETL.getDataFrame(stagingPullRequest).write.mode(SaveMode.Overwrite).parquet(pullRequestPresentationOutput)
   println("-- PULLREQUEST DIMENSION EXITO --")
 
+
   BranchPresentationETL.getDataFrame(stagingPullRequest).write.mode(SaveMode.Overwrite).parquet(branchPresentationOutput)
   println("-- BRANCH DIMENSION EXITO --")
+
 
   AssigneesGroupPresentationETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(asigneesPresentationOutput)
   println("-- ASIGNEES DIMENSION EXITO --")
 
   ReviewersGroupPresentationETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(reviewersPresentationOutput)
   println("-- REVIEWERS DIMENSION EXITO --")
-  */
 
-
- // PullRequestFactTablePresentationETL.getDataFrameBranch(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(pullRequestFactTable)
-
-  PullRequestFactTablePresentationETL.getDataFrameBranch(stagingPullRequest,spark).show()
+  PullRequestFactTablePresentationETL.getDataFrameBranch(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(pullRequestFactTable)
   println("-- PULLREQUEST FACT TABLE  EXITO --")
-/*
 
-*/
+ // PullRequestFactTablePresentationETL.getDataFrameBranch(stagingPullRequest,spark).show()
+
+
 
 
 

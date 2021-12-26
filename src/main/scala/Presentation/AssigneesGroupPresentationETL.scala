@@ -8,10 +8,10 @@ object AssigneesGroupPresentationETL {
   def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession:SparkSession):DataFrame={
 
     val asigneesDF = stagingPullRequestDF
-      .filter(col("pull_request_assignees_id") =!= -1)
+      .filter(col("pull_request_assignees_item").isNotNull)
       .select(
         col("pull_request_id").as("asignees_group_id"),
-        col("pull_request_assignees_id").as("user_dim_id"))
+        col("pull_request_assignees_item.id").as("user_dim_id"))
 
     val ColumnNull = Seq("asignees_group_id","user_dim_id")
     val DataNull = Seq(("-1","Not available"))

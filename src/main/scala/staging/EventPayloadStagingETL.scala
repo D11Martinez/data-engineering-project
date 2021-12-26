@@ -1,7 +1,7 @@
 package staging
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{asc, col, date_format, explode, when}
+import org.apache.spark.sql.functions.{asc, col, date_format, explode, explode_outer, when}
 
 object EventPayloadStagingETL {
   def getDataFrame(rawPullRequestsDF: DataFrame): DataFrame = {
@@ -98,21 +98,22 @@ object EventPayloadStagingETL {
         )
         .withColumn("pull_request_commit_sha", col("pull_request_commit.sha"))
         .withColumn(
-          "pull_request_requested_reviewer",when(col("pull_request_requested_reviewers_list")==="[]",-1)
-            .otherwise(explode(col("pull_request_requested_reviewers_list")))
+          "pull_request_requested_reviewer",
+          explode_outer(col("pull_request_requested_reviewers_list"))
+
         )
-        .withColumn(
+       /* .withColumn(
           "pull_request_requested_reviewer_id",when(col("pull_request_requested_reviewer")=!= -1,
             col("pull_request_requested_reviewer.id")).otherwise(-1)
-        )
+        )*/
         .withColumn(
-          "pull_request_assignees_item",when(col("pull_request_assignees_list")==="[]",-1)
-            .otherwise(explode(col("pull_request_assignees_list")))
+          "pull_request_assignees_item",
+          explode_outer(col("pull_request_assignees_list"))
         )
-        .withColumn(
+       /* .withColumn(
           "pull_request_assignees_id",when(col("pull_request_assignees_item") =!= -1,
             col("pull_request_assignees_item.id")).otherwise(-1)
-        )
+        )*/
         .withColumn(
         "create_at_time_temporal",
         date_format(col("pull_request_created_at"), "HH:mm:ss")
@@ -124,9 +125,9 @@ object EventPayloadStagingETL {
           "pull_request_commits_list",
           "pull_request_commit",
           "pull_request_requested_reviewers_list",
-          "pull_request_requested_reviewer",
+          //"pull_request_requested_reviewer",
           "pull_request_assignees_list",
-          "pull_request_assignees_item"
+          //"pull_request_assignees_item"
         )
 
     eventPayloadDF

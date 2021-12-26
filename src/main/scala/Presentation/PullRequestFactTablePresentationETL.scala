@@ -25,7 +25,10 @@ object PullRequestFactTablePresentationETL {
 
     val pullRequesStaging = stagingPullRequestDF
       .dropDuplicates("id")
-
+      .withColumn("assignee_group_id",
+        when(col("pull_request_assignees_item").isNull,-1).otherwise(col("pull_request_id")))
+      .withColumn("reviewers_group_id",
+        when(col("pull_request_requested_reviewer").isNull,-1).otherwise(col("pull_request_id")))
       .select(
         col("pull_request_id"),
         col("pull_request_head.repo.id").as("base_branch_id"),
@@ -56,8 +59,8 @@ object PullRequestFactTablePresentationETL {
           .as("mergeable"),
         col("pull_request_merge_commit_sha").as("merge_commit_sha"),
         col("pull_request_author_association").as("author_association"),
-        col("pull_request_id").as("assignee_group_id"),
-        col("pull_request_id").as("reviewers_group_id")
+        col("assignee_group_id"),
+        col("reviewers_group_id")
       )
 
 
@@ -132,6 +135,7 @@ object PullRequestFactTablePresentationETL {
       .withColumnRenamed("pk_id_org","organization_id")
       .withColumnRenamed("pk_id_time","created_at_time")
       .withColumnRenamed("pk_id_date","created_at_date")
+      .withColumn("pk_id", monotonically_increasing_id())
 
   }
 

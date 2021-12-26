@@ -8,12 +8,12 @@ object ReviewersGroupPresentationETL {
   def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession: SparkSession):DataFrame={
 
     val reviewersDF = stagingPullRequestDF
-      .filter(col("pull_request_assignees_id") =!= -1)
+      .filter(col("pull_request_requested_reviewer").isNotNull)
       .select(
         col("pull_request_id").as("reviewers_group_id"),
-        col("pull_request_requested_reviewer_id").as("user_dim_id"))
+        col("pull_request_requested_reviewer.id").as("user_dim_id"))
 
-    val ColumnNull = Seq("asignees_group_id","user_dim_id")
+    val ColumnNull = Seq("reviewers_group_id","user_dim_id")
     val DataNull = Seq(("-1","Not available"))
     val reviewersNull = sparkSession.createDataFrame(DataNull).toDF(ColumnNull:_*)
 

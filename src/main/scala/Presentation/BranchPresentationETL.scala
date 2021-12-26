@@ -8,7 +8,7 @@ object BranchPresentationETL {
 
   def getDataFrameBranch(stagingPullRequestDF: DataFrame,columna:String):DataFrame={
     val branchDimension = stagingPullRequestDF
-      .dropDuplicates("pull_request_id")
+     // .dropDuplicates("pull_request_id")
       .withColumn("branch",col(columna))
       .withColumn("protected_branch",lit("Not available"))
       .withColumn("description_repo",col("branch.description"))
@@ -19,7 +19,7 @@ object BranchPresentationETL {
       .withColumn("private_repo",col("branch.private"))
       .withColumn("size_repo",col("branch.size"))
       .withColumn("disabled_repo",lit("Not available"))
-      .withColumn("pk_id", monotonically_increasing_id())
+
       .select(
         col("branch.name").as("branch_name"),
         col("protected_branch"),
@@ -39,7 +39,6 @@ object BranchPresentationETL {
         col("branch.stargazers_count").as("stargazer_count_repo"),
         col("branch.watchers_count").as("watchers_count_repo"),
         col("branch.pushed_at").as("pushed_at"),
-        col("pk_id")
       )
 
     branchDimension
@@ -59,7 +58,7 @@ object BranchPresentationETL {
         col("branch1.pushed_at") === col("branch2.pushed_at")))
       .select("branch1.*")
 
-    val branchUnique = BranchDF.dropDuplicates("full_name_repo","repo_id")
+    val branchUnique = BranchDF.dropDuplicates("repo_id").withColumn("pk_id", monotonically_increasing_id())
 
     branchUnique
 
