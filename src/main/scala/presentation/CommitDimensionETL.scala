@@ -1,7 +1,7 @@
 package presentation
 
-import org.apache.spark.sql.{Column, SaveMode, SparkSession, functions}
-import org.apache.spark.sql.functions.{col, length, size, trim, udf, when}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object CommitDimensionETL extends App {
   // user defined functions
