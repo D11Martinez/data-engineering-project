@@ -6,7 +6,7 @@ object MainStagingETL extends App {
 
   // Add your own config paths here
   val rawPullRequestPath =
-    "C:/Users/sramos/Documents/DataSet/jsonprueba"
+    "D:/Documents/UES/TBS115_2021/Proyecto/Datasets/github-dataset"
 
   // these are the default paths
   val userStagingOutput = "src/dataset/staging/users"

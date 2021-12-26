@@ -22,7 +22,7 @@ object CommitStagingETL {
         col("commit.tree.sha").as("tree_sha"),
         col("commit.tree.url").as("tree_url"),
         col("commit.url").as("url"),
-        col("commit.comment_count"),
+        col("commit.comment_count").as("comment_count"),
         col("commit.verification.verified").as("verification_verified"),
         col("commit.verification.reason").as("verification_reason"),
         col("commit.verification.signature").as("verification_signature"),
