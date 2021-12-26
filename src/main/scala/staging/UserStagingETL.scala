@@ -2,13 +2,7 @@ package staging
 
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, explode, when}
-import org.apache.spark.sql.types.{
-  BooleanType,
-  LongType,
-  StringType,
-  StructField,
-  StructType
-}
+import org.apache.spark.sql.types.{BooleanType, LongType, StringType, StructField, StructType}
 
 object UserStagingETL {
   val temporalActorsOutput = "src/dataset/staging/temp/actors"
@@ -22,6 +16,8 @@ object UserStagingETL {
   val temporalCommitAuthorOutput = "src/dataset/staging/temp/commit-authors"
   val temporalCommitCommitterOutput =
     "src/dataset/staging/temp/commit-committers"
+
+  val OrganizationsOutput = "src/dataset/staging/organizations"
 
   val userStagingSchema: StructType = StructType(
     Array(
@@ -56,7 +52,7 @@ object UserStagingETL {
       StructField("followers", LongType, true),
       StructField("following", LongType, true),
       StructField("created_at", StringType, true),
-      StructField("updated_at", StringType, true)
+      StructField("updated_at", StringType, true),
     )
   )
   def parseToUser(
@@ -84,6 +80,7 @@ object UserStagingETL {
 
     val organizationsDF =
       rawPullRequestsDF.select(col("org")).distinct().select("org.*")
+    organizationsDF.write.mode(SaveMode.Overwrite).parquet(OrganizationsOutput)
 
     val ownerDF = rawPullRequestsDF
       .select(col("payload.pull_request.head.repo.owner"))
@@ -137,9 +134,6 @@ object UserStagingETL {
       sparkSession,
       temporalActorsOutput
     )
-      .unionByName(
-        parseToUser(organizationsDF, sparkSession, temporalOrganizationsOutput)
-      )
       .unionByName(
         parseToUser(ownerDF, sparkSession, temporalOwnersOutput)
       )
