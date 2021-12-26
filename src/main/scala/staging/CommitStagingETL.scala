@@ -50,6 +50,9 @@ object CommitStagingETL {
       .withColumn("parent", explode(col("parents")))
       .drop("file", "parents")
 
+    commitsDF.printSchema(3)
+    commitsDF.show(10)
+
     commitsDF
   }
 }
