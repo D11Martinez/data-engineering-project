@@ -4,8 +4,11 @@ import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, explode, lit, monotonically_increasing_id, when}
 
 object AssigneesGroupPresentationETL {
+  val userPresentationOutput = "src/dataset/presentation/usersDimension"
 
   def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession:SparkSession):DataFrame={
+
+    val userDim = sparkSession.read.parquet(userPresentationOutput)
 
     val asigneesDF = stagingPullRequestDF
       .filter(col("pull_request_assignees_item").isNotNull)
@@ -13,11 +16,15 @@ object AssigneesGroupPresentationETL {
         col("pull_request_id").as("asignees_group_id"),
         col("pull_request_assignees_item.id").as("user_dim_id"))
 
+    val asigneesDF2 = asigneesDF.as("asignees")
+      .join(userDim.as("user"),asigneesDF("user_dim_id")===userDim("user_id"),"inner")
+      .select(col("asignees.asignees_group_id"),col("user.pk_id").as("user_dim_id"))
+
     val ColumnNull = Seq("asignees_group_id","user_dim_id")
     val DataNull = Seq(("-1","Not available"))
     val asigneesNull = sparkSession.createDataFrame(DataNull).toDF(ColumnNull:_*)
 
-    val asigneesUnion = asigneesDF.unionByName(asigneesNull)
+    val asigneesUnion = asigneesDF2.unionByName(asigneesNull)
 
     asigneesUnion
 
