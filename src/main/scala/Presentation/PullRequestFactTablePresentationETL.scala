@@ -38,8 +38,8 @@ object PullRequestFactTablePresentationETL {
         col("pull_request_user_id").as("user_id"),
         col("pull_request_head.repo.owner.id").as("owner_repo_id"),
         col("org_id").as("organization_id"),
-        col("create_at_date_temporal").as("created_at_date"),
-        col("create_at_time_temporal").as("created_at_time"),
+        date_format(col("create_at_date_temporal"),"yyyyMMdd").as("created_at_date"),
+        date_format(col("create_at_time_temporal"),"HHmmss").as("created_at_time"),
         col("pull_request_state").as("state"),
         col("pull_request_additions").as("additions"),
         col("pull_request_deletions").as("deletions"),
@@ -104,7 +104,7 @@ object PullRequestFactTablePresentationETL {
       .withColumn("pk_id_org",col("org.pk_id"))
       .select("pullRequestFact7.*","pk_id_org")
 
-    val pullRequestFact9 = pullRequestFact8.as("pullRequestFact8")
+   /* val pullRequestFact9 = pullRequestFact8.as("pullRequestFact8")
       .join(timeDim.as("time"),pullRequestFact8("created_at_time")===timeDim("time24h"),"inner")
       .withColumn("pk_id_time",col("time.time_key"))
       .select("pullRequestFact8.*","pk_id_time")
@@ -112,9 +112,9 @@ object PullRequestFactTablePresentationETL {
     val pullRequestFact10 = pullRequestFact9.as("pullRequestFact9")
       .join(dateDim.as("date"),pullRequestFact9("created_at_date")===dateDim("date"),"inner")
       .withColumn("pk_id_date",col("date.date_key"))
-      .select("pullRequestFact9.*","pk_id_date")
+      .select("pullRequestFact9.*","pk_id_date")*/
 
-    pullRequestFact10.drop(
+    pullRequestFact8.drop(
       "pull_request_id",
       "base_branch_id",
       "head_branch_id",
@@ -122,9 +122,7 @@ object PullRequestFactTablePresentationETL {
       "merged_id",
       "user_id",
       "owner_repo_id",
-      "organization_id",
-      "created_at_date",
-      "created_at_time"
+      "organization_id"
     ).withColumnRenamed("pk_id_pull","pull_request_id")
       .withColumnRenamed("pk_id_branch_head","head_branch")
       .withColumnRenamed("pk_id_branch_base","base_branch")
@@ -133,8 +131,6 @@ object PullRequestFactTablePresentationETL {
       .withColumnRenamed("pk_id_user","user_id")
       .withColumnRenamed("pk_id_owner","owner_repo")
       .withColumnRenamed("pk_id_org","organization_id")
-      .withColumnRenamed("pk_id_time","created_at_time")
-      .withColumnRenamed("pk_id_date","created_at_date")
       .withColumn("pk_id", monotonically_increasing_id())
 
   }
