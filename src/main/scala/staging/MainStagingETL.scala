@@ -28,11 +28,12 @@ object MainStagingETL extends App {
     .mode(SaveMode.Overwrite)
     .parquet(userStagingOutput)
 
-  CommitStagingETL
-    .getDataFrame(rawPullRequestsDF)
-    .write
-    .mode(SaveMode.Overwrite)
-    .parquet(commitStagingOutPut)
+//  Deprecated
+//  CommitStagingETL
+//    .getDataFrame(rawPullRequestsDF)
+//    .write
+//    .mode(SaveMode.Overwrite)
+//    .parquet(commitStagingOutPut)
 
   EventPayloadStagingETL
     .getDataFrame(rawPullRequestsDF)

@@ -1,12 +1,12 @@
 package staging
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{asc, col, date_format, explode, explode_outer, when}
+import org.apache.spark.sql.functions.{col, date_format, explode, explode_outer}
 
 object EventPayloadStagingETL {
   def getDataFrame(rawPullRequestsDF: DataFrame): DataFrame = {
     // Do transformations here
-    val eventPayloadDF =
+    val eventPayloadWithoutCommitDF =
       rawPullRequestsDF
         .select(
           col("id"),
@@ -42,8 +42,7 @@ object EventPayloadStagingETL {
             .as("pull_request_assignee_id"),
           col("payload.pull_request.assignees").as(
             "pull_request_assignees_list"
-          )
-          ,
+          ),
           col("payload.pull_request.requested_reviewers")
             .as("pull_request_requested_reviewers_list"),
           col("payload.pull_request.milestone").as("pull_request_milestone"),
@@ -96,13 +95,11 @@ object EventPayloadStagingETL {
           "pull_request_commit",
           explode(col("pull_request_commits_list"))
         )
-        .withColumn("pull_request_commit_sha", col("pull_request_commit.sha"))
         .withColumn(
           "pull_request_requested_reviewer",
           explode_outer(col("pull_request_requested_reviewers_list"))
-
         )
-       /* .withColumn(
+        /* .withColumn(
           "pull_request_requested_reviewer_id",when(col("pull_request_requested_reviewer")=!= -1,
             col("pull_request_requested_reviewer.id")).otherwise(-1)
         )*/
@@ -110,26 +107,179 @@ object EventPayloadStagingETL {
           "pull_request_assignees_item",
           explode_outer(col("pull_request_assignees_list"))
         )
-       /* .withColumn(
+        /* .withColumn(
           "pull_request_assignees_id",when(col("pull_request_assignees_item") =!= -1,
             col("pull_request_assignees_item.id")).otherwise(-1)
         )*/
         .withColumn(
-        "create_at_time_temporal",
-        date_format(col("pull_request_created_at"), "HH:mm:ss")
-      ).withColumn(
-        "create_at_date_temporal",
-        date_format(col("pull_request_created_at"), "yyyy-MM-dd")
-      )
+          "create_at_time_temporal",
+          date_format(col("pull_request_created_at"), "HH:mm:ss")
+        )
+        .withColumn(
+          "create_at_date_temporal",
+          date_format(col("pull_request_created_at"), "yyyy-MM-dd")
+        )
         .drop(
           "pull_request_commits_list",
-          "pull_request_commit",
           "pull_request_requested_reviewers_list",
           //"pull_request_requested_reviewer",
-          "pull_request_assignees_list",
+          "pull_request_assignees_list"
           //"pull_request_assignees_item"
         )
 
+    val eventPayloadDF = eventPayloadWithoutCommitDF
+      .withColumn("pull_request_commit_sha", col("pull_request_commit.sha"))
+      .withColumn(
+        "pull_request_commit_node_id",
+        col("pull_request_commit.node_id")
+      )
+      .withColumn(
+        "pull_request_commit_author_id",
+        col("pull_request_commit.author.id")
+      )
+      .withColumn(
+        "pull_request_commit_author_name",
+        col("pull_request_commit.commit.author.name")
+      )
+      .withColumn(
+        "pull_request_commit_author_email",
+        col("pull_request_commit.commit.author.email")
+      )
+      .withColumn(
+        "pull_request_commit_author_date",
+        col("pull_request_commit.commit.author.date")
+      )
+      .withColumn(
+        "pull_request_commit_committer_id",
+        col("pull_request_commit.committer.id")
+      )
+      .withColumn(
+        "pull_request_commit_committer_name",
+        col("pull_request_commit.commit.committer.name")
+      )
+      .withColumn(
+        "pull_request_commit_committer_email",
+        col("pull_request_commit.commit.committer.email")
+      )
+      .withColumn(
+        "pull_request_commit_committer_date",
+        col("pull_request_commit.commit.committer.date")
+      )
+      .withColumn(
+        "pull_request_commit_message",
+        col("pull_request_commit.commit.message")
+      )
+      .withColumn(
+        "pull_request_commit_tree_sha",
+        col("pull_request_commit.commit.tree.sha")
+      )
+      .withColumn(
+        "pull_request_commit_tree_url",
+        col("pull_request_commit.commit.tree.url")
+      )
+      .withColumn(
+        "pull_request_commit_url",
+        col("pull_request_commit.commit.url")
+      )
+      .withColumn(
+        "pull_request_commit_comment_count",
+        col("pull_request_commit.commit.comment_count")
+      )
+      .withColumn(
+        "pull_request_commit_verification_verified",
+        col("pull_request_commit.commit.verification.verified")
+      )
+      .withColumn(
+        "pull_request_commit_verification_reason",
+        col("pull_request_commit.commit.verification.reason")
+      )
+      .withColumn(
+        "pull_request_commit_verification_signature",
+        col("pull_request_commit.commit.verification.signature")
+      )
+      .withColumn(
+        "pull_request_commit_verification_payload",
+        col("pull_request_commit.commit.verification.payload")
+      )
+      .withColumn(
+        "pull_request_commit_html_url",
+        col("pull_request_commit.html_url")
+      )
+      .withColumn(
+        "pull_request_commit_comments_url",
+        col("pull_request_commit.comments_url")
+      )
+      .withColumn(
+        "pull_request_commit_parents",
+        col("pull_request_commit.parents")
+      )
+      .withColumn(
+        "pull_request_commit_total_changes",
+        col("pull_request_commit.stats.total")
+      )
+      .withColumn(
+        "pull_request_commit_total_additions",
+        col("pull_request_commit.stats.additions")
+      )
+      .withColumn(
+        "pull_request_commit_total_deletions",
+        col("pull_request_commit.stats.deletions")
+      )
+      .withColumn(
+        "pull_request_commit_file",
+        explode(col("pull_request_commit.files"))
+      )
+      .withColumn(
+        "pull_request_commit_file_sha",
+        col("pull_request_commit_file.sha")
+      )
+      .withColumn(
+        "pull_request_commit_file_filename",
+        col("pull_request_commit_file.filename")
+      )
+      .withColumn(
+        "pull_request_commit_file_status",
+        col("pull_request_commit_file.status")
+      )
+      .withColumn(
+        "pull_request_commit_file_additions",
+        col("pull_request_commit_file.additions")
+      )
+      .withColumn(
+        "pull_request_commit_file_deletions",
+        col("pull_request_commit_file.deletions")
+      )
+      .withColumn(
+        "pull_request_commit_file_changes",
+        col("pull_request_commit_file.changes")
+      )
+      .withColumn(
+        "pull_request_commit_file_blob_url",
+        col("pull_request_commit_file.blob_url")
+      )
+      .withColumn(
+        "pull_request_commit_file_raw_url",
+        col("pull_request_commit_file.raw_url")
+      )
+      .withColumn(
+        "pull_request_commit_file_contents_url",
+        col("pull_request_commit_file.contents_url")
+      )
+      .withColumn(
+        "pull_request_commit_file_patch",
+        col("pull_request_commit_file.patch")
+      )
+      .withColumn(
+        "pull_request_commit_parent",
+        explode_outer(col("pull_request_commit_parents"))
+      )
+      .drop(
+        "pull_request_commit_file",
+        "pull_request_commit",
+        "pull_request_commit_parents"
+      )
+
+    eventPayloadDF.printSchema(3)
     eventPayloadDF
   }
 }
