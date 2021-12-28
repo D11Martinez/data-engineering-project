@@ -3,24 +3,19 @@ package Presentation
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, date_format, explode, lit, monotonically_increasing_id, when}
 
-object PullRequestFactTablePresentationETL {
+object PullRequestFactETL {
 
-  val userPresentationOutput = "src/dataset/presentation/usersDimension"
-  val orgPresentationOutput = "src/dataset/presentation/organizationsDimension"
-  val pullRequestPresentationOutput = "src/dataset/presentation/PullRequestDimension"
-  val branchPresentationOutput = "src/dataset/presentation/BranchDimension"
-  val reviewersPresentationOutput = "src/dataset/presentation/ReviewersGroupDimension"
-  val asigneesPresentationOutput = "src/dataset/presentation/AsigneesGroupDimension"
-  val timePresentationOutput = "src/dataset/presentation/TimeDimension"
-  val datePresentationOutput = "src/dataset/presentation/DateDimension"
+  val userPresentationOutput = "src/dataset/presentation/users-dimension"
+  val orgPresentationOutput = "src/dataset/presentation/organizations-dimension"
+  val pullRequestPresentationOutput = "src/dataset/presentation/pullrequest-dimension"
+  val branchPresentationOutput = "src/dataset/presentation/branch-dimension"
+
 
   def getDataFrameBranch(stagingPullRequestDF: DataFrame,sparkSession:SparkSession):DataFrame={
 
     val userDim = sparkSession.read.parquet(userPresentationOutput)
     val orgDim = sparkSession.read.parquet(orgPresentationOutput)
     val branchDim = sparkSession.read.parquet(branchPresentationOutput)
-    val timeDim = sparkSession.read.parquet(timePresentationOutput)
-    val dateDim =  sparkSession.read.parquet(datePresentationOutput)
     val pullRequestDim =  sparkSession.read.parquet(pullRequestPresentationOutput)
 
     val pullRequesStaging = stagingPullRequestDF
@@ -63,56 +58,65 @@ object PullRequestFactTablePresentationETL {
         col("reviewers_group_id")
       )
 
+    println("cantidad rows staging:"+pullRequesStaging.count())
+
 
     val pullRequestFact1 = pullRequesStaging.as("stagingPullFact")
-      .join(pullRequestDim.as("pullRequestDim"),pullRequesStaging("pull_request_id")===pullRequestDim("pull_request_id"),"inner")
+      .join(pullRequestDim.as("pullRequestDim"),pullRequesStaging("pull_request_id")===pullRequestDim("pull_request_id"),"left")
       .withColumn("pk_id_pull",col("pullRequestDim.pk_id"))
       .select("stagingPullFact.*","pk_id_pull")
 
+    println("cantidad rows pullRequestFact1:"+pullRequestFact1.count())
+
     val pullRequestFact2 = pullRequestFact1.as("pullRequestFact1")
-      .join(branchDim.as("branchHeadDim"),pullRequestFact1("head_branch_id")===branchDim("repo_id"),"inner")
+      .join(branchDim.as("branchHeadDim"),pullRequestFact1("head_branch_id")===branchDim("repo_id"),"left")
       .withColumn("pk_id_branch_head",col("branchHeadDim.pk_id"))
       .select("pullRequestFact1.*","pk_id_branch_head")
 
+    println("cantidad rows pullRequestFact2:"+pullRequestFact2.count())
+
     val pullRequestFact3 = pullRequestFact2.as("pullRequestFact2")
-      .join(branchDim.as("branchBaseDim"),pullRequestFact2("base_branch_id")===branchDim("repo_id"),"inner")
+      .join(branchDim.as("branchBaseDim"),pullRequestFact2("base_branch_id")===branchDim("repo_id"),"left")
       .withColumn("pk_id_branch_base",col("branchBaseDim.pk_id"))
       .select("pullRequestFact2.*","pk_id_branch_base")
 
+    println("cantidad rows pullRequestFact3:"+pullRequestFact3.count())
+
     val pullRequestFact4 = pullRequestFact3.as("pullRequestFact3")
-      .join(userDim.as("userActor"),pullRequestFact3("actor_id")===userDim("user_id"),"inner")
+      .join(userDim.as("userActor"),pullRequestFact3("actor_id")===userDim("user_id"),"left")
       .withColumn("pk_id_actor",col("userActor.pk_id"))
       .select("pullRequestFact3.*","pk_id_actor")
 
+    println("cantidad rows pullRequestFact4:"+pullRequestFact4.count())
+
     val pullRequestFact5 = pullRequestFact4.as("pullRequestFact4")
-      .join(userDim.as("userMerged"),pullRequestFact4("merged_id")===userDim("user_id"),"inner")
+      .join(userDim.as("userMerged"),pullRequestFact4("merged_id")===userDim("user_id"),"left")
       .withColumn("pk_id_merged",col("userMerged.pk_id"))
       .select("pullRequestFact4.*","pk_id_merged")
 
+    println("cantidad rows pullRequestFact5:"+pullRequestFact5.count())
+
     val pullRequestFact6 = pullRequestFact5.as("pullRequestFact5")
-      .join(userDim.as("user"),pullRequestFact5("user_id")===userDim("user_id"),"inner")
+      .join(userDim.as("user"),pullRequestFact5("user_id")===userDim("user_id"),"left")
       .withColumn("pk_id_user",col("user.pk_id"))
       .select("pullRequestFact5.*","pk_id_user")
 
+    println("cantidad rows pullRequestFact6:"+pullRequestFact6.count())
+
     val pullRequestFact7 = pullRequestFact6.as("pullRequestFact6")
-      .join(userDim.as("userOwner"),pullRequestFact6("user_id")===userDim("user_id"),"inner")
+      .join(userDim.as("userOwner"),pullRequestFact6("user_id")===userDim("user_id"),"left")
       .withColumn("pk_id_owner",col("userOwner.pk_id"))
       .select("pullRequestFact6.*","pk_id_owner")
 
+    println("cantidad rows pullRequestFact7:"+pullRequestFact7.count())
+
+
     val pullRequestFact8 = pullRequestFact7.as("pullRequestFact7")
-      .join(orgDim.as("org"),pullRequestFact7("organization_id")===orgDim("organization_id"),"inner")
+      .join(orgDim.as("org"),pullRequestFact7("organization_id")===orgDim("organization_id"),"left")
       .withColumn("pk_id_org",col("org.pk_id"))
       .select("pullRequestFact7.*","pk_id_org")
 
-   /* val pullRequestFact9 = pullRequestFact8.as("pullRequestFact8")
-      .join(timeDim.as("time"),pullRequestFact8("created_at_time")===timeDim("time24h"),"inner")
-      .withColumn("pk_id_time",col("time.time_key"))
-      .select("pullRequestFact8.*","pk_id_time")
-
-    val pullRequestFact10 = pullRequestFact9.as("pullRequestFact9")
-      .join(dateDim.as("date"),pullRequestFact9("created_at_date")===dateDim("date"),"inner")
-      .withColumn("pk_id_date",col("date.date_key"))
-      .select("pullRequestFact9.*","pk_id_date")*/
+    println("cantidad rows pullRequestFact8:"+pullRequestFact8.count())
 
     pullRequestFact8.drop(
       "pull_request_id",
@@ -132,6 +136,7 @@ object PullRequestFactTablePresentationETL {
       .withColumnRenamed("pk_id_owner","owner_repo")
       .withColumnRenamed("pk_id_org","organization_id")
       .withColumn("pk_id", monotonically_increasing_id())
+      .na.fill(-1)
 
   }
 

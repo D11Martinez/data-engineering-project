@@ -3,7 +3,7 @@ package Presentation
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, explode, lit, monotonically_increasing_id, when}
 
-object BranchPresentationETL {
+object BranchDimensionETL {
 
 
   def getDataFrameBranch(stagingPullRequestDF: DataFrame,columna:String):DataFrame={
@@ -44,7 +44,7 @@ object BranchPresentationETL {
     branchDimension
   }
 
-  def getDataFrame(stagingPullRequestDF: DataFrame):DataFrame={
+  def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession: SparkSession):DataFrame={
 
     val BranchHead = getDataFrameBranch(stagingPullRequestDF,"pull_request_head.repo")
 
@@ -60,7 +60,11 @@ object BranchPresentationETL {
 
     val branchUnique = BranchDF.dropDuplicates("repo_id").withColumn("pk_id", monotonically_increasing_id())
 
-    branchUnique
+    val branchNUll = sparkSession.createDataFrame(NullDimension.BranchDataNull).toDF(NullDimension.BranchColumnNull:_*)
+
+    val branchUnion = branchUnique.unionByName(branchNUll)
+
+    branchUnion
 
   }
 

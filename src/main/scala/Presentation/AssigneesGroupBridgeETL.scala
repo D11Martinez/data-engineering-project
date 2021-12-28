@@ -3,8 +3,8 @@ package Presentation
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, explode, lit, monotonically_increasing_id, when}
 
-object AssigneesGroupPresentationETL {
-  val userPresentationOutput = "src/dataset/presentation/usersDimension"
+object AssigneesGroupBridgeETL {
+  val userPresentationOutput = "src/dataset/presentation/users-dimension"
 
   def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession:SparkSession):DataFrame={
 
@@ -21,7 +21,7 @@ object AssigneesGroupPresentationETL {
       .select(col("asignees.asignees_group_id"),col("user.pk_id").as("user_dim_id"))
 
     val ColumnNull = Seq("asignees_group_id","user_dim_id")
-    val DataNull = Seq(("-1","Not available"))
+    val DataNull = Seq((-1,-1))
     val asigneesNull = sparkSession.createDataFrame(DataNull).toDF(ColumnNull:_*)
 
     val asigneesUnion = asigneesDF2.unionByName(asigneesNull)

@@ -3,9 +3,9 @@ package Presentation
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, explode, lit, monotonically_increasing_id, when}
 
-object OrgPresentationETL {
+object OrgDimensionETL {
 
-  def getDataFrame(stagingOrgDF: DataFrame):DataFrame={
+  def getDataFrame(stagingOrgDF: DataFrame,sparkSession: SparkSession):DataFrame={
 
     val orgDimension = stagingOrgDF.filter(col("type")==="Organization").dropDuplicates("id")
       .withColumn("pk_id",lit(monotonically_increasing_id()))
@@ -29,6 +29,10 @@ object OrgPresentationETL {
         when(col("following").isNull,"Following repos at not available").otherwise(col("following")).as("following")
       )
 
-    orgDimension
+    val orgNull = sparkSession.createDataFrame(NullDimension.OrgDataNull).toDF(NullDimension.OrgColumnNull:_*)
+
+    val orgUnion = orgDimension.unionByName(orgNull)
+
+    orgUnion
   }
 }
