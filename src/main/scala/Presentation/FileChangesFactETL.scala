@@ -9,11 +9,11 @@ object FileChangesFactETL extends App {
 
   val commitDimensionSource = "src/dataset/presentation/commit-dimension"
   val fileDimensionSource = "src/dataset/presentation/file-dimension"
-  val orgDimensionSource = "src/dataset/presentation/organizationsDimension"
-  val dateDimensionSource = "src/dataset/presentation/DateDimension"
-  val timeDimensionSource = "src/dataset/presentation/TimeDimension"
-  val branchDimensionSource = "src/dataset/presentation/BranchDimension"
-  val userDimensionSource = "src/dataset/presentation/usersDimension"
+  val orgDimensionSource = "src/dataset/presentation/organizations-dimension"
+  val dateDimensionSource = "src/dataset/presentation/date-dimension"
+  val timeDimensionSource = "src/dataset/presentation/time-dimension"
+  val branchDimensionSource = "src/dataset/presentation/branch-dimension"
+  val userDimensionSource = "src/dataset/presentation/users-dimension"
 
   val fileChangesFactOutput = "src/dataset/presentation/file-changes-fact"
 
