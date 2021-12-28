@@ -2,7 +2,13 @@ package staging
 
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, explode, when}
-import org.apache.spark.sql.types.{BooleanType, LongType, StringType, StructField, StructType}
+import org.apache.spark.sql.types.{
+  BooleanType,
+  LongType,
+  StringType,
+  StructField,
+  StructType
+}
 
 object UserStagingETL {
   val temporalActorsOutput = "src/dataset/staging/temp/actors"
@@ -52,7 +58,7 @@ object UserStagingETL {
       StructField("followers", LongType, true),
       StructField("following", LongType, true),
       StructField("created_at", StringType, true),
-      StructField("updated_at", StringType, true),
+      StructField("updated_at", StringType, true)
     )
   )
   def parseToUser(
@@ -106,14 +112,18 @@ object UserStagingETL {
 
     val pullRequestAssigneesDF =
       rawPullRequestsDF
-        .select(explode(col("payload.pull_request.assignees")))
+        .select(explode(col("payload.pull_request.assignees")).as("assignees"))
         .distinct()
-        .select("col.*")
+        .select("assignees.*")
 
     val reviewersDF =
-      rawPullRequestsDF.select(
-        explode(col("payload.pull_request.requested_reviewers"))
-      )
+      rawPullRequestsDF
+        .select(
+          explode(col("payload.pull_request.requested_reviewers"))
+            .as("requested_reviewers")
+        )
+        .distinct()
+        .select("requested_reviewers.*")
 
     val commitAuthorDF = rawPullRequestsDF
       .select(

@@ -5,8 +5,6 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object FileDimensionETL extends App {
   // user defined functions
-  val uuid = udf(() => java.util.UUID.randomUUID().toString)
-
   val getLastUDF = udf((xs: Seq[String]) => xs.last)
 
   val getFilePathUDF =
@@ -131,7 +129,7 @@ object FileDimensionETL extends App {
           .as("file_contents_url")
       )
       .distinct()
-      .withColumn("id", uuid())
+      .withColumn("id", monotonically_increasing_id())
       .select("*")
 
   fileDimensionDF.printSchema(3)

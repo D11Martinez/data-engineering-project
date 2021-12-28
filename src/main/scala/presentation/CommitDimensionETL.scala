@@ -5,8 +5,6 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object CommitDimensionETL extends App {
   // user defined functions
-  val uuid = udf(() => java.util.UUID.randomUUID().toString)
-
   val validateMessageUDF =
     udf((message: String) => {
       if (message.nonEmpty) {
@@ -124,7 +122,7 @@ object CommitDimensionETL extends App {
         .as("pull_request_author_association")
     )
     .distinct()
-    .withColumn("id", uuid())
+    .withColumn("id", monotonically_increasing_id())
     .select("*")
 
   commitDimensionDF.printSchema(3)
