@@ -1,7 +1,7 @@
 package staging
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{col, date_format, explode, explode_outer}
+import org.apache.spark.sql.functions.{col, date_format, explode_outer}
 
 object EventPayloadStagingETL {
   def getDataFrame(rawPullRequestsDF: DataFrame): DataFrame = {
@@ -93,7 +93,7 @@ object EventPayloadStagingETL {
         )
         .withColumn(
           "pull_request_commit",
-          explode(col("pull_request_commits_list"))
+          explode_outer(col("pull_request_commits_list"))
         )
         .withColumn(
           "pull_request_requested_reviewer",
@@ -227,7 +227,7 @@ object EventPayloadStagingETL {
       )
       .withColumn(
         "pull_request_commit_file",
-        explode(col("pull_request_commit.files"))
+        explode_outer(col("pull_request_commit.files"))
       )
       .withColumn(
         "pull_request_commit_file_sha",

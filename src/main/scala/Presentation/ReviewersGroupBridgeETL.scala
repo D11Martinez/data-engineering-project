@@ -3,9 +3,9 @@ package Presentation
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, explode, lit, monotonically_increasing_id, when}
 
-object ReviewersGroupPresentationETL {
+object ReviewersGroupBridgeETL {
 
-  val userPresentationOutput = "src/dataset/presentation/usersDimension"
+  val userPresentationOutput = "src/dataset/presentation/users-dimension"
 
   def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession: SparkSession):DataFrame={
 
@@ -22,7 +22,7 @@ object ReviewersGroupPresentationETL {
       .select(col("reviewers.reviewers_group_id"),col("user.pk_id").as("user_dim_id"))
 
     val ColumnNull = Seq("reviewers_group_id","user_dim_id")
-    val DataNull = Seq(("-1","Not available"))
+    val DataNull = Seq((-1,-1))
     val reviewersNull = sparkSession.createDataFrame(DataNull).toDF(ColumnNull:_*)
 
     val reviewersUnion = reviewersDF2.unionByName(reviewersNull)

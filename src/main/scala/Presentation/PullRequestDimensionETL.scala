@@ -3,9 +3,9 @@ package Presentation
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, explode, lit, monotonically_increasing_id, when}
 
-object PullRequestPresentationETL {
+object PullRequestDimensionETL {
 
-  def getDataFrame(stagingPullRequestDF: DataFrame):DataFrame={
+  def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession: SparkSession):DataFrame={
 
     val pullRquestDimension = stagingPullRequestDF
       .dropDuplicates("pull_request_id")
@@ -20,6 +20,10 @@ object PullRequestPresentationETL {
         when(col("pull_request_locked") === true, "Is locked").otherwise("Is not locked").as("locked")
       )
 
-    pullRquestDimension
+    val pullRequestNull = sparkSession.createDataFrame(NullDimension.PullRequestDataNull).toDF(NullDimension.PullRequestColumnNull:_*)
+
+    val pullRequestUnion = pullRquestDimension.unionByName(pullRequestNull)
+
+    pullRequestUnion
   }
 }

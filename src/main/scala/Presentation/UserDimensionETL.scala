@@ -4,9 +4,9 @@ import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{col, explode, lit, monotonically_increasing_id, when}
 import org.apache.spark.sql.types.StringType
 
-object UserPreserntationETL {
+object UserDimensionETL {
 
-  def getDataFrame(stagingUserDF: DataFrame):DataFrame={
+  def getDataFrame(stagingUserDF: DataFrame,sparkSession: SparkSession):DataFrame={
 
     val userDimension = stagingUserDF.filter(col("type")==="User").dropDuplicates("id")
       .withColumn("pk_id",lit(monotonically_increasing_id()))
@@ -48,7 +48,12 @@ object UserPreserntationETL {
         col("hireable"), col("bio"), col("company"), col("blog"), col("twitter_username"),
         col("created_at"), col("updated_at"), col("followers"), col("following"),col("public_repos"))
 
-    userDimension
+
+    val userNull = sparkSession.createDataFrame(NullDimension.UserDataNull).toDF(NullDimension.UserColumnNull:_*)
+
+    val userUnion = userDimension.unionByName(userNull)
+
+    userUnion
 
   }
 

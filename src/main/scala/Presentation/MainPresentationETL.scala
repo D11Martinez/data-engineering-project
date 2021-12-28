@@ -11,13 +11,13 @@ object MainPresentationETL extends App {
   val OrganizationsOutput = "src/dataset/staging/organizations"
 
   // paths presentation
-  val userPresentationOutput = "src/dataset/presentation/usersDimension"
-  val orgPresentationOutput = "src/dataset/presentation/organizationsDimension"
-  val pullRequestPresentationOutput = "src/dataset/presentation/PullRequestDimension"
-  val branchPresentationOutput = "src/dataset/presentation/BranchDimension"
-  val reviewersPresentationOutput = "src/dataset/presentation/ReviewersGroupDimension"
-  val asigneesPresentationOutput = "src/dataset/presentation/AsigneesGroupDimension"
-  val pullRequestFactTable = "src/dataset/presentation/PullRequestFactTable"
+  val userPresentationOutput = "src/dataset/presentation/users-dimension"
+  val orgPresentationOutput = "src/dataset/presentation/organizations-dimension"
+  val pullRequestPresentationOutput = "src/dataset/presentation/pullrequest-dimension"
+  val branchPresentationOutput = "src/dataset/presentation/branch-dimension"
+  val reviewersPresentationOutput = "src/dataset/presentation/reviewersgroup-dimension"
+  val asigneesPresentationOutput = "src/dataset/presentation/asigneesgroup-dimension"
+  val pullRequestFactTable = "src/dataset/presentation/pullrequest-factTable"
 
   val spark = SparkSession.builder
     .master("local[*]")
@@ -33,27 +33,28 @@ object MainPresentationETL extends App {
   //stagingPullRequest.select("*").show(10,false)
   //spark.read.parquet(pullRequestFactTable).select("*").show(100,false)
 
-  OrgPresentationETL.getDataFrame(stagingOrg).write.mode(SaveMode.Overwrite).parquet(orgPresentationOutput)
+
+  OrgDimensionETL.getDataFrame(stagingOrg,spark).write.mode(SaveMode.Overwrite).parquet(orgPresentationOutput)
   println("-- ORG DIMENSION EXITO --")
 
-  UserPreserntationETL.getDataFrame(stagingUser).write.mode(SaveMode.Overwrite).parquet(userPresentationOutput)
+  UserDimensionETL.getDataFrame(stagingUser,spark).write.mode(SaveMode.Overwrite).parquet(userPresentationOutput)
   println("-- USER DIMENSION EXITO --")
 
-  PullRequestPresentationETL.getDataFrame(stagingPullRequest).write.mode(SaveMode.Overwrite).parquet(pullRequestPresentationOutput)
+  PullRequestDimensionETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(pullRequestPresentationOutput)
   println("-- PULLREQUEST DIMENSION EXITO --")
 
 
-  BranchPresentationETL.getDataFrame(stagingPullRequest).write.mode(SaveMode.Overwrite).parquet(branchPresentationOutput)
+  BranchDimensionETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(branchPresentationOutput)
   println("-- BRANCH DIMENSION EXITO --")
 
 
-  AssigneesGroupPresentationETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(asigneesPresentationOutput)
+  AssigneesGroupBridgeETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(asigneesPresentationOutput)
   println("-- ASIGNEES DIMENSION EXITO --")
 
-  ReviewersGroupPresentationETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(reviewersPresentationOutput)
+  ReviewersGroupBridgeETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(reviewersPresentationOutput)
   println("-- REVIEWERS DIMENSION EXITO --")
 
-  PullRequestFactTablePresentationETL.getDataFrameBranch(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(pullRequestFactTable)
+  PullRequestFactETL.getDataFrameBranch(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(pullRequestFactTable)
   println("-- PULLREQUEST FACT TABLE  EXITO --")
 
  // PullRequestFactTablePresentationETL.getDataFrameBranch(stagingPullRequest,spark).show()
