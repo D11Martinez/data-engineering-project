@@ -1,11 +1,14 @@
 package Presentation
 
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import org.apache.spark.sql.functions.{col, explode, lit, monotonically_increasing_id, when}
+import org.apache.spark.sql.functions.{col, monotonically_increasing_id, when}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object PullRequestDimensionETL {
 
-  def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession: SparkSession):DataFrame={
+  def getDataFrame(
+      stagingPullRequestDF: DataFrame,
+      sparkSession: SparkSession
+  ): DataFrame = {
 
     val pullRquestDimension = stagingPullRequestDF
       .dropDuplicates("pull_request_id")
@@ -16,11 +19,16 @@ object PullRequestDimensionETL {
         col("pull_request_number").as("number"),
         col("pull_request_title").as("title"),
         when(col("pull_request_body").isNull, "No Pull Request body available")
-          .otherwise(col("pull_request_body")).as("body"),
-        when(col("pull_request_locked") === true, "Is locked").otherwise("Is not locked").as("locked")
+          .otherwise(col("pull_request_body"))
+          .as("body"),
+        when(col("pull_request_locked") === true, "Is locked")
+          .otherwise("Is not locked")
+          .as("locked")
       )
 
-    val pullRequestNull = sparkSession.createDataFrame(NullDimension.PullRequestDataNull).toDF(NullDimension.PullRequestColumnNull:_*)
+    val pullRequestNull = sparkSession
+      .createDataFrame(NullDimension.PullRequestDataNull)
+      .toDF(NullDimension.PullRequestColumnNull: _*)
 
     val pullRequestUnion = pullRquestDimension.unionByName(pullRequestNull)
 
