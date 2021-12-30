@@ -41,7 +41,8 @@ object BranchDimensionETL {
         col("branch.pushed_at").as("pushed_at"),
       )
 
-    branchDimension
+    val branchDimension2 = branchDimension.dropDuplicates("repo_id")
+    branchDimension2
   }
 
   def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession: SparkSession):DataFrame={
