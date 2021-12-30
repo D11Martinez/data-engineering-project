@@ -106,6 +106,7 @@ object NullDimension {
 
   val BranchColumnNull = Seq(
     "pk_id",
+    "branch_sha",
     "branch_name",
     "protected_branch",
     "full_name_repo",
@@ -129,6 +130,7 @@ object NullDimension {
   val BranchDataNull = Seq(
     (
       -1,
+      "Undefined",
       "Undefined",
       "Undefined",
       "Undefined",

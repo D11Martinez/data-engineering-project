@@ -136,7 +136,7 @@ object FileChangesFactETL extends App {
     "branch_id"
   )
 
-  val fileChangesFactDF = fileChangesFactWithRepoOwnerDF
+  val fileChangesFactDF = fileChangesFactWithBranchDF
     .withColumn(
       "byte_changes",
       when(col("file_patch").isNull, lit(0)).otherwise(
