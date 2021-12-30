@@ -8,10 +8,9 @@ object CommitDimensionETL extends App {
   val validateMessageUDF =
     udf((message: String) => {
       if (message.nonEmpty) {
-        val isInitialCapitalLetter = message.charAt(0).isUpper
         val isGoodLength = message.length <= 80
 
-        isInitialCapitalLetter && isGoodLength
+        isGoodLength
       } else false
     })
 

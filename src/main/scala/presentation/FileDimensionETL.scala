@@ -58,25 +58,25 @@ object FileDimensionETL extends App {
             )
               .otherwise(col("pull_request_commit_file_sha"))
           )
-          .as("file_sha"),
+          .as("sha"),
         when(col("file_name").isNull, "Filename not available")
           .otherwise(
             when(length(trim(col("file_name"))) === 0, "Empty value")
               .otherwise(col("file_name"))
           )
-          .as("file_name"),
+          .as("name"),
         when(col("file_extension").isNull, "File extension not available")
           .otherwise(
             when(length(trim(col("file_extension"))) === 0, "Empty value")
               .otherwise(col("file_extension"))
           )
-          .as("file_extension"),
+          .as("extension"),
         when(col("file_path").isNull, "File path not available")
           .otherwise(
             when(length(trim(col("file_path"))) === 0, "Root path")
               .otherwise(col("file_path"))
           )
-          .as("file_path"),
+          .as("path"),
         when(
           col("pull_request_commit_file_filename").isNull,
           "Full filename not available"

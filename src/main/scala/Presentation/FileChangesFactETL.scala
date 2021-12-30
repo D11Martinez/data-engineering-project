@@ -86,7 +86,7 @@ object FileChangesFactETL extends App {
     fileChangesFactWithCommitsDF,
     fileDimDF,
     "pull_request_commit_file_sha",
-    "file_sha",
+    "sha",
     "pk_id",
     "file_id"
   ).drop("pull_request_commit_file_sha")

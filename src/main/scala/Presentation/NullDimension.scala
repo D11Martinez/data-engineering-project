@@ -153,10 +153,10 @@ object NullDimension {
   // File Dimension
   val fileColumnNull = Seq(
     "pk_id",
-    "file_sha",
-    "file_name",
-    "file_extension",
-    "file_path",
+    "sha",
+    "name",
+    "extension",
+    "path",
     "full_file_name"
   )
 
