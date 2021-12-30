@@ -42,17 +42,23 @@ object PullRequestFactETL {
         col("pull_request_commits").as("commits"),
         col("pull_request_comments").as("comments"),
         col("pull_request_review_comments").as("review_comments"),
-        date_format(col("pull_request_updated_at"),"yyyy-MM-dd").as("updated_at_date"),
-        date_format(col("pull_request_closed_at"),"yyyy-MM-dd").as("closed_at_date"),
-        date_format(col("pull_request_merged_at"),"yyyy-MM-dd").as("merged_at_date"),
-        date_format(col("pull_request_updated_at"),"HH:mm:ss").as("updated_at_time"),
-        date_format(col("pull_request_closed_at"),"HH:mm:ss").as("closed_at_time"),
-        date_format(col("pull_request_merged_at"),"HH:mm:ss").as("merged_at_time"),
+        when(col("pull_request_updated_at").isNull,"Not available")
+          .otherwise(date_format(col("pull_request_updated_at"),"yyyy-MM-dd")).as("updated_at_date"),
+        when(col("pull_request_closed_at").isNull,"Not available")
+          .otherwise(date_format(col("pull_request_closed_at"),"yyyy-MM-dd")).as("closed_at_date"),
+        when(col("pull_request_merged_at").isNull,"Not available")
+          .otherwise(date_format(col("pull_request_merged_at"),"yyyy-MM-dd")).as("merged_at_date"),
+        when(col("pull_request_updated_at").isNull,"Not available")
+          .otherwise(date_format(col("pull_request_updated_at"),"HH:mm:ss")).as("updated_at_time"),
+        when(col("pull_request_closed_at").isNull,"Not available")
+          .otherwise(date_format(col("pull_request_closed_at"),"HH:mm:ss")).as("closed_at_time"),
+        when(col("pull_request_merged_at").isNull,"Not available")
+          .otherwise(date_format(col("pull_request_merged_at"),"HH:mm:ss")).as("merged_at_time"),
         when(col("pull_request_merged") === true, "Is merged").otherwise("Is not merged").as("merged"),
         when(col("pull_request_mergeable") === true, "Is mergeable")
           .otherwise(when(col("pull_request_mergeable") === false, "Is not mergeable").otherwise("Not available"))
           .as("mergeable"),
-        col("pull_request_merge_commit_sha").as("merge_commit_sha"),
+        when(col("pull_request_merge_commit_sha").isNull,"Not available").otherwise(col("pull_request_merge_commit_sha")).as("merge_commit_sha"),
         col("pull_request_author_association").as("author_association"),
         col("assignee_group_id"),
         col("reviewers_group_id")
