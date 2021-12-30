@@ -46,6 +46,7 @@ object FileChangesFactETL extends App {
   val userDimDF = spark.read.parquet(userDimensionSource)
 //  val branchDimDF = spark.read.parquet(branchDimensionSource)
 
+  eventPayloadStagingDF.show(10)
 //  branchDimDF.printSchema(4)
 
   val fileChangesFactRawFieldsDF =
@@ -143,7 +144,9 @@ object FileChangesFactETL extends App {
   val fileChangesFactDF = fileChangesFactWithRepoOwnerDF
     .withColumn(
       "byte_changes",
-      length(col("file_patch"))
+      when(col("file_patch").isNull, lit(0)).otherwise(
+        length(col("file_patch"))
+      )
     ) //TODO: improve byte changes calculation
     .select(
       when(col("commit_id").isNull, lit(-1))
@@ -185,7 +188,8 @@ object FileChangesFactETL extends App {
     .select("*")
     .withColumn("id", monotonically_increasing_id())
 
-  fileChangesFactDF.printSchema(3)
+  //fileChangesFactDF.printSchema(3)
+  //fileChangesFactDF.show(10)
 
   fileChangesFactDF.write
     .mode(SaveMode.Overwrite)
