@@ -125,10 +125,17 @@ object CommitDimensionETL extends App {
     .withColumn("pk_id", monotonically_increasing_id())
     .select("*")
 
-  commitDimensionDF.printSchema(3)
-  commitDimensionDF.show(10)
+  val commitUndefinedRowDF = spark
+    .createDataFrame(NullDimension.commitDataNull)
+    .toDF(NullDimension.commitColumnNull: _*)
 
-  commitDimensionDF.write
+  val commitDimensionWithUndefinedRowDF =
+    commitDimensionDF.unionByName(commitUndefinedRowDF)
+
+  commitDimensionWithUndefinedRowDF.printSchema(3)
+  commitDimensionWithUndefinedRowDF.show(10)
+
+  commitDimensionWithUndefinedRowDF.write
     .mode(SaveMode.Overwrite)
     .parquet(commitDimensionOutput)
 }

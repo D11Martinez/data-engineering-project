@@ -168,7 +168,7 @@ object FileChangesFactETL extends App {
         .as("repo_owner_id"),
       when(col("branch_id").isNull, lit(-1))
         .otherwise(col("branch_id"))
-        .as("branch_id"), //TODO: join with branch dim
+        .as("branch_id"),
       when(col("file_additions").isNull, lit(0))
         .otherwise(col("file_additions"))
         .as("additions"),

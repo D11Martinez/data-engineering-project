@@ -1,5 +1,6 @@
 package presentation
 
+import Presentation.NullDimension
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -132,10 +133,17 @@ object FileDimensionETL extends App {
       .withColumn("pk_id", monotonically_increasing_id())
       .select("*")
 
-  fileDimensionDF.printSchema(3)
-  fileDimensionDF.show(10)
+  val fileUndefinedRowDF = spark
+    .createDataFrame(NullDimension.fileDataNull)
+    .toDF(NullDimension.fileColumnNull: _*)
 
-  fileDimensionDF.write
+  val fileDimensionWithUndefinedRowDF =
+    fileDimensionDF.unionByName(fileUndefinedRowDF)
+
+  fileDimensionWithUndefinedRowDF.printSchema(3)
+  fileDimensionWithUndefinedRowDF.show(10)
+
+  fileDimensionWithUndefinedRowDF.write
     .mode(SaveMode.Overwrite)
     .parquet(fileDimensionOutput)
 }
