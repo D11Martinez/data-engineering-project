@@ -10,8 +10,6 @@ object FileChangesFactETL extends App {
   val commitDimensionSource = "src/dataset/presentation/commit-dimension"
   val fileDimensionSource = "src/dataset/presentation/file-dimension"
   val orgDimensionSource = "src/dataset/presentation/organizations-dimension"
-  val dateDimensionSource = "src/dataset/presentation/date-dimension"
-  val timeDimensionSource = "src/dataset/presentation/time-dimension"
   val branchDimensionSource = "src/dataset/presentation/branch-dimension"
   val userDimensionSource = "src/dataset/presentation/users-dimension"
 
@@ -45,8 +43,6 @@ object FileChangesFactETL extends App {
   val organizationDimDF = spark.read.parquet(orgDimensionSource)
   val userDimDF = spark.read.parquet(userDimensionSource)
   val branchDimDF = spark.read.parquet(branchDimensionSource)
-
-//  branchDimDF.printSchema(4)
 
   val fileChangesFactRawFieldsDF =
     eventPayloadStagingDF

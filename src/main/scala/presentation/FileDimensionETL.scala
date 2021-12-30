@@ -32,10 +32,7 @@ object FileDimensionETL extends App {
     eventPayloadDF
       .select(
         "pull_request_commit_file_sha",
-        "pull_request_commit_file_filename",
-        "pull_request_commit_file_blob_url",
-        "pull_request_commit_file_raw_url",
-        "pull_request_commit_file_contents_url"
+        "pull_request_commit_file_filename"
       )
       .withColumn(
         "file_name",
@@ -91,43 +88,7 @@ object FileDimensionETL extends App {
             )
               .otherwise(col("pull_request_commit_file_filename"))
           )
-          .as("full_file_name"),
-        when(
-          col("pull_request_commit_file_blob_url").isNull,
-          "File blob URL not available"
-        )
-          .otherwise(
-            when(
-              length(trim(col("pull_request_commit_file_blob_url"))) === 0,
-              "Empty value"
-            )
-              .otherwise(col("pull_request_commit_file_blob_url"))
-          )
-          .as("file_blob_url"),
-        when(
-          col("pull_request_commit_file_raw_url").isNull,
-          "File raw URL not available"
-        )
-          .otherwise(
-            when(
-              length(trim(col("pull_request_commit_file_raw_url"))) === 0,
-              "Empty value"
-            )
-              .otherwise(col("pull_request_commit_file_raw_url"))
-          )
-          .as("file_raw_url"),
-        when(
-          col("pull_request_commit_file_contents_url").isNull,
-          "File contents URL not available"
-        )
-          .otherwise(
-            when(
-              length(trim(col("pull_request_commit_file_contents_url"))) === 0,
-              "Empty value"
-            )
-              .otherwise(col("pull_request_commit_file_contents_url"))
-          )
-          .as("file_contents_url")
+          .as("full_file_name")
       )
       .distinct()
       .withColumn("pk_id", monotonically_increasing_id())

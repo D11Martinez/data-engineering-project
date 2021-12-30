@@ -157,18 +157,12 @@ object NullDimension {
     "file_name",
     "file_extension",
     "file_path",
-    "full_file_name",
-    "file_blob_url",
-    "file_raw_url",
-    "file_contents_url"
+    "full_file_name"
   )
 
   val fileDataNull = Seq(
     (
       -1,
-      "Undefined",
-      "Undefined",
-      "Undefined",
       "Undefined",
       "Undefined",
       "Undefined",
