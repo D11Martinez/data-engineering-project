@@ -122,9 +122,12 @@ object UserDimensionETL {
       .createDataFrame(NullDimension.UserDataNull)
       .toDF(NullDimension.UserColumnNull: _*)
 
-    val userUnion = userDimension.unionByName(userNull)
+    val userUnionDF = userDimension.unionByName(userNull)
 
-    userUnion
+    userUnionDF.printSchema(3)
+    userUnionDF.show(10)
+
+    userUnionDF
   }
 
 }

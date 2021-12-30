@@ -1,15 +1,14 @@
 package Presentation
 object NullDimension {
 
-  //PULLREQUEST DIMENSION
+  // PULL REQUEST DIMENSION
   val PullRequestColumnNull =
     Seq("pk_id", "pull_request_id", "number", "title", "body", "locked")
   val PullRequestDataNull = Seq(
     (-1, "Undefined", "Undefined", "Undefined", "Undefined", "Undefined")
   )
 
-  //ORG DIMENSION
-
+  // ORG DIMENSION
   val OrgColumnNull = Seq(
     "pk_id",
     "organization_id",
@@ -31,7 +30,6 @@ object NullDimension {
     "followers",
     "following"
   )
-
   val OrgDataNull = Seq(
     (
       -1,
@@ -56,7 +54,7 @@ object NullDimension {
     )
   )
 
-  //USER DIMENION
+  // USER DIMENSION
   val UserColumnNull = Seq(
     "pk_id",
     "user_id",
@@ -77,7 +75,6 @@ object NullDimension {
     "following",
     "public_repos"
   )
-
   val UserDataNull = Seq(
     (
       -1,
@@ -101,7 +98,7 @@ object NullDimension {
     )
   )
 
-  //BRANCH DIMENSION
+  // BRANCH DIMENSION
 
   val BranchColumnNull = Seq(
     "pk_id",

@@ -10,7 +10,7 @@ object PullRequestDimensionETL {
       sparkSession: SparkSession
   ): DataFrame = {
 
-    val pullRquestDimension = stagingPullRequestDF
+    val pullRequestDimensionDF = stagingPullRequestDF
       .dropDuplicates("pull_request_id")
       .withColumn("pk_id", monotonically_increasing_id())
       .select(
@@ -26,12 +26,16 @@ object PullRequestDimensionETL {
           .as("locked")
       )
 
-    val pullRequestNull = sparkSession
+    val pullRequestNullDF = sparkSession
       .createDataFrame(NullDimension.PullRequestDataNull)
       .toDF(NullDimension.PullRequestColumnNull: _*)
 
-    val pullRequestUnion = pullRquestDimension.unionByName(pullRequestNull)
+    val pullRequestUnionDF =
+      pullRequestDimensionDF.unionByName(pullRequestNullDF)
 
-    pullRequestUnion
+    pullRequestUnionDF.printSchema(3)
+    pullRequestUnionDF.show(10)
+
+    pullRequestUnionDF
   }
 }

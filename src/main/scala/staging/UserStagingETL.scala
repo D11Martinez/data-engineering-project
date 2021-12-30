@@ -1,14 +1,8 @@
 package staging
 
+import org.apache.spark.sql.functions.{col, explode}
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import org.apache.spark.sql.functions.{col, explode, when}
-import org.apache.spark.sql.types.{
-  BooleanType,
-  LongType,
-  StringType,
-  StructField,
-  StructType
-}
 
 object UserStagingETL {
   val temporalActorsOutput = "src/dataset/staging/temp/actors"

@@ -13,18 +13,18 @@ object AssigneesGroupBridgeETL {
 
     val userDim = sparkSession.read.parquet(userPresentationOutput)
 
-    val asigneesDF = stagingPullRequestDF
+    val assigneesDF = stagingPullRequestDF
       .filter(col("pull_request_assignees_item").isNotNull)
       .select(
         col("pull_request_id").as("asignees_group_id"),
         col("pull_request_assignees_item.id").as("user_dim_id")
       )
 
-    val asigneesDF2 = asigneesDF
+    val assigneesDF2 = assigneesDF
       .as("asignees")
       .join(
         userDim.as("user"),
-        asigneesDF("user_dim_id") === userDim("user_id"),
+        assigneesDF("user_dim_id") === userDim("user_id"),
         "inner"
       )
       .select(
@@ -34,13 +34,14 @@ object AssigneesGroupBridgeETL {
 
     val ColumnNull = Seq("asignees_group_id", "user_dim_id")
     val DataNull = Seq((-1, -1))
-    val asigneesNull =
+    val assigneesNull =
       sparkSession.createDataFrame(DataNull).toDF(ColumnNull: _*)
 
-    val asigneesUnion = asigneesDF2.unionByName(asigneesNull)
+    val assigneesUnionDF = assigneesDF2.unionByName(assigneesNull)
 
-    asigneesUnion
+    assigneesUnionDF.printSchema(3)
+    assigneesUnionDF.show(10)
 
+    assigneesUnionDF
   }
-
 }

@@ -79,11 +79,11 @@ object BranchDimensionETL {
     val BranchBase =
       getDataFrameBranch(stagingPullRequestDF, "pull_request_base")
 
-    val BrancUnion = BranchHead.unionByName(BranchBase)
+    val BranchUnion = BranchHead.unionByName(BranchBase)
 
-    val BranchDF = BrancUnion
+    val BranchDF = BranchUnion
       .as("branch1")
-      .join(BrancUnion.as("branch2"))
+      .join(BranchUnion.as("branch2"))
       .filter(
         (col("branch1.repo_id") === col("branch2.repo_id"))
           && (col("branch1.pushed_at").gt(col("branch2.pushed_at")) ||
@@ -99,9 +99,12 @@ object BranchDimensionETL {
       .createDataFrame(NullDimension.BranchDataNull)
       .toDF(NullDimension.BranchColumnNull: _*)
 
-    val branchUnion = branchUnique.unionByName(branchNUll)
+    val branchUnionDF = branchUnique.unionByName(branchNUll)
 
-    branchUnion
+    branchUnionDF.printSchema(3)
+    branchUnionDF.show(10)
+
+    branchUnionDF
 
   }
 

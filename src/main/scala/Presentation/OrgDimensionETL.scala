@@ -89,8 +89,11 @@ object OrgDimensionETL {
       .createDataFrame(NullDimension.OrgDataNull)
       .toDF(NullDimension.OrgColumnNull: _*)
 
-    val orgUnion = orgDimension.unionByName(orgNull)
+    val orgUnionDF = orgDimension.unionByName(orgNull)
 
-    orgUnion
+    orgUnionDF.printSchema(3)
+    orgUnionDF.show(10)
+
+    orgUnionDF
   }
 }

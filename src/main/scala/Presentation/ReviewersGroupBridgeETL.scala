@@ -38,10 +38,12 @@ object ReviewersGroupBridgeETL {
     val reviewersNull =
       sparkSession.createDataFrame(DataNull).toDF(ColumnNull: _*)
 
-    val reviewersUnion = reviewersDF2.unionByName(reviewersNull)
+    val reviewersUnionDF = reviewersDF2.unionByName(reviewersNull)
 
-    reviewersUnion
+    reviewersUnionDF.printSchema(3)
+    reviewersUnionDF.show(10)
 
+    reviewersUnionDF
   }
 
 }

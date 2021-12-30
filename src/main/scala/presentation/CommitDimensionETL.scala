@@ -1,11 +1,12 @@
 package Presentation
 
+import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object CommitDimensionETL {
   // user defined functions
-  val validateMessageUDF =
+  val validateMessageUDF: UserDefinedFunction =
     udf((message: String) => {
       if (message.nonEmpty) {
         val isGoodLength = message.length <= 80

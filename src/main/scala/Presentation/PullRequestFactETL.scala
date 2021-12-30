@@ -27,7 +27,7 @@ object PullRequestFactETL {
     val pullRequestDim =
       sparkSession.read.parquet(pullRequestPresentationOutput)
 
-    val pullRequesStaging = stagingPullRequestDF
+    val pullRequestStaging = stagingPullRequestDF
       .dropDuplicates("id")
       .withColumn(
         "assignee_group_id",
@@ -94,13 +94,13 @@ object PullRequestFactETL {
         col("reviewers_group_id")
       )
 
-    println("cantidad rows staging:" + pullRequesStaging.count())
+    println("cantidad rows staging:" + pullRequestStaging.count())
 
-    val pullRequestFact1 = pullRequesStaging
+    val pullRequestFact1 = pullRequestStaging
       .as("stagingPullFact")
       .join(
         pullRequestDim.as("pullRequestDim"),
-        pullRequesStaging("pull_request_id") === pullRequestDim(
+        pullRequestStaging("pull_request_id") === pullRequestDim(
           "pull_request_id"
         ),
         "left"
@@ -194,7 +194,7 @@ object PullRequestFactETL {
 
     println("cantidad rows pullRequestFact8:" + pullRequestFact8.count())
 
-    pullRequestFact8
+    val finalPullRequestFactDF = pullRequestFact8
       .drop(
         "pull_request_id",
         "base_branch_id",
@@ -217,6 +217,10 @@ object PullRequestFactETL {
       .na
       .fill(-1)
 
+    finalPullRequestFactDF.printSchema(3)
+    finalPullRequestFactDF.show(10)
+
+    finalPullRequestFactDF
   }
 
 }

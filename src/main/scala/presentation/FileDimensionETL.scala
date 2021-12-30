@@ -1,14 +1,15 @@
 package presentation
 
 import Presentation.NullDimension
+import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object FileDimensionETL {
 
-  val getLastUDF = udf((xs: Seq[String]) => xs.last)
+  val getLastUDF: UserDefinedFunction = udf((xs: Seq[String]) => xs.last)
 
-  val getFilePathUDF =
+  val getFilePathUDF: UserDefinedFunction =
     udf((elements: Seq[String]) => {
       elements.size match {
         case 0 => ""
