@@ -44,9 +44,8 @@ object FileChangesFactETL extends App {
   val fileDimDF = spark.read.parquet(fileDimensionSource)
   val organizationDimDF = spark.read.parquet(orgDimensionSource)
   val userDimDF = spark.read.parquet(userDimensionSource)
-//  val branchDimDF = spark.read.parquet(branchDimensionSource)
+  val branchDimDF = spark.read.parquet(branchDimensionSource)
 
-  eventPayloadStagingDF.show(10)
 //  branchDimDF.printSchema(4)
 
   val fileChangesFactRawFieldsDF =
@@ -83,7 +82,7 @@ object FileChangesFactETL extends App {
     commitDimDF,
     "pull_request_commit_sha",
     "sha",
-    "id",
+    "pk_id",
     "commit_id"
   ).drop("pull_request_commit_sha")
 
@@ -92,7 +91,7 @@ object FileChangesFactETL extends App {
     fileDimDF,
     "pull_request_commit_file_sha",
     "file_sha",
-    "id",
+    "pk_id",
     "file_id"
   ).drop("pull_request_commit_file_sha")
 
@@ -132,14 +131,14 @@ object FileChangesFactETL extends App {
     "repo_owner_id"
   ).drop("pull_request_head_repo_owner_id")
 
-//  val fileChangesFactWithBranchDF = applyLeftJoin(
-//    fileChangesFactWithRepoOwnerDF,
-//    userDimDF,
-//    "pull_request_head_sha",
-//    "branch_sha",
-//    "pk_id",
-//    "branch_id"
-//  )
+  val fileChangesFactWithBranchDF = applyLeftJoin(
+    fileChangesFactWithRepoOwnerDF,
+    branchDimDF,
+    "pull_request_head_sha",
+    "branch_sha",
+    "pk_id",
+    "branch_id"
+  )
 
   val fileChangesFactDF = fileChangesFactWithRepoOwnerDF
     .withColumn(
@@ -147,7 +146,7 @@ object FileChangesFactETL extends App {
       when(col("file_patch").isNull, lit(0)).otherwise(
         length(col("file_patch"))
       )
-    ) //TODO: improve byte changes calculation
+    )
     .select(
       when(col("commit_id").isNull, lit(-1))
         .otherwise(col("commit_id"))
@@ -167,8 +166,8 @@ object FileChangesFactETL extends App {
       when(col("repo_owner_id").isNull, lit(-1))
         .otherwise(col("repo_owner_id"))
         .as("repo_owner_id"),
-      when(col("pull_request_head_sha").isNull, lit(-1))
-        .otherwise(col("pull_request_head_sha"))
+      when(col("branch_id").isNull, lit(-1))
+        .otherwise(col("branch_id"))
         .as("branch_id"), //TODO: join with branch dim
       when(col("file_additions").isNull, lit(0))
         .otherwise(col("file_additions"))
@@ -186,10 +185,10 @@ object FileChangesFactETL extends App {
     )
     .distinct()
     .select("*")
-    .withColumn("id", monotonically_increasing_id())
+    .withColumn("pk_id", monotonically_increasing_id())
 
-  //fileChangesFactDF.printSchema(3)
-  //fileChangesFactDF.show(10)
+  fileChangesFactDF.printSchema(3)
+  fileChangesFactDF.show(10)
 
   fileChangesFactDF.write
     .mode(SaveMode.Overwrite)

@@ -122,7 +122,7 @@ object CommitDimensionETL extends App {
         .as("pull_request_author_association")
     )
     .distinct()
-    .withColumn("id", monotonically_increasing_id())
+    .withColumn("pk_id", monotonically_increasing_id())
     .select("*")
 
   commitDimensionDF.printSchema(3)

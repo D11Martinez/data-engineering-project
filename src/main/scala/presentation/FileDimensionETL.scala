@@ -129,7 +129,7 @@ object FileDimensionETL extends App {
           .as("file_contents_url")
       )
       .distinct()
-      .withColumn("id", monotonically_increasing_id())
+      .withColumn("pk_id", monotonically_increasing_id())
       .select("*")
 
   fileDimensionDF.printSchema(3)
