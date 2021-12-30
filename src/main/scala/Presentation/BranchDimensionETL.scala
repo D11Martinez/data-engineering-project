@@ -9,7 +9,9 @@ object BranchDimensionETL {
   def getDataFrameBranch(stagingPullRequestDF: DataFrame,columna:String):DataFrame={
     val branchDimension = stagingPullRequestDF
      // .dropDuplicates("pull_request_id")
-      .withColumn("branch",col(columna))
+      .withColumn("branch_sha",col(columna+".sha"))
+      .withColumn("branch_name",col(columna+".ref"))
+      .withColumn("branch",col(columna+".repo"))
       .withColumn("protected_branch",lit("Not available"))
       .withColumn("description_repo",col("branch.description"))
       .withColumn("language_repo",col("branch.language"))
@@ -21,7 +23,8 @@ object BranchDimensionETL {
       .withColumn("disabled_repo",lit("Not available"))
 
       .select(
-        col("branch.name").as("branch_name"),
+        col("branch_name"),
+        col("branch_sha"),
         col("protected_branch"),
         col("branch.full_name").as("full_name_repo"),
         when(col("description_repo").isNull,"Description not available").otherwise(col("description_repo")).as("description_repo"),
@@ -47,9 +50,9 @@ object BranchDimensionETL {
 
   def getDataFrame(stagingPullRequestDF: DataFrame,sparkSession: SparkSession):DataFrame={
 
-    val BranchHead = getDataFrameBranch(stagingPullRequestDF,"pull_request_head.repo")
+    val BranchHead = getDataFrameBranch(stagingPullRequestDF,"pull_request_head")
 
-    val BranchBase = getDataFrameBranch(stagingPullRequestDF,"pull_request_base.repo")
+    val BranchBase = getDataFrameBranch(stagingPullRequestDF,"pull_request_base")
 
     val BrancUnion = BranchHead.unionByName(BranchBase)
 
