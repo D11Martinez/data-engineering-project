@@ -18,11 +18,19 @@ object MainPresentationETL extends App {
   val reviewersPresentationOutput = "src/dataset/presentation/reviewersgroup-dimension"
   val asigneesPresentationOutput = "src/dataset/presentation/asigneesgroup-dimension"
   val pullRequestFactTable = "src/dataset/presentation/pullrequest-factTable"
+  //val prueba = "src/dataset/presentation/pruebaAsignees"
+  //val pruebauser = "src/dataset/presentation/pruebaUser"
 
   val spark = SparkSession.builder
     .master("local[*]")
     .appName("SparkTest")
+    .config("dfs.client.read.shortcircuit.skip.checksum", "true")
     .getOrCreate()
+
+  spark.sparkContext.hadoopConfiguration.set("mapreduce.fileoutputcommitter.marksuccessfuljobs","false")
+  spark.sparkContext.hadoopConfiguration.set("parquet.enable.summary-metadata", "false")
+  //val fs = org.apache.hadoop.fs.FileSystem.get(conf)
+ // fs.setVerifyChecksum(false)
 
   val stagingOrg = spark.read.parquet(OrganizationsOutput)
   val stagingUser = spark.read.parquet(userStagingOutput)
@@ -31,33 +39,48 @@ object MainPresentationETL extends App {
 
   //stagingPullRequest.select("pull_request_id").groupBy("pull_request_id").count().show(10,false)
   //stagingPullRequest.select("*").show(10,false)
-  //spark.read.parquet(pullRequestFactTable).select("*").show(100,false)
+  //spark.read.parquet(pullRequestFactTable).filter(col("closed_at_date")==="Not available").select("*").show(100,false)
 
 
-  OrgDimensionETL.getDataFrame(stagingOrg,spark).write.mode(SaveMode.Overwrite).parquet(orgPresentationOutput)
+  OrgDimensionETL.getDataFrame(stagingOrg,spark).coalesce(1).write.mode(SaveMode.Overwrite).parquet(orgPresentationOutput)
   println("-- ORG DIMENSION EXITO --")
 
-  UserDimensionETL.getDataFrame(stagingUser,spark).write.mode(SaveMode.Overwrite).parquet(userPresentationOutput)
+  UserDimensionETL.getDataFrame(stagingUser,spark).coalesce(1).write.mode(SaveMode.Overwrite).parquet(userPresentationOutput)
   println("-- USER DIMENSION EXITO --")
 
-  PullRequestDimensionETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(pullRequestPresentationOutput)
+
+  PullRequestDimensionETL.getDataFrame(stagingPullRequest,spark).coalesce(1).write.mode(SaveMode.Overwrite).parquet(pullRequestPresentationOutput)
   println("-- PULLREQUEST DIMENSION EXITO --")
 
 
-  BranchDimensionETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(branchPresentationOutput)
+  BranchDimensionETL.getDataFrame(stagingPullRequest,spark).coalesce(1).write.mode(SaveMode.Overwrite).parquet(branchPresentationOutput)
   println("-- BRANCH DIMENSION EXITO --")
 
 
-  AssigneesGroupBridgeETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(asigneesPresentationOutput)
+  AssigneesGroupBridgeETL.getDataFrame(stagingPullRequest,spark).coalesce(1).write.mode(SaveMode.Overwrite).parquet(asigneesPresentationOutput)
   println("-- ASIGNEES DIMENSION EXITO --")
 
-  ReviewersGroupBridgeETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(reviewersPresentationOutput)
+  ReviewersGroupBridgeETL.getDataFrame(stagingPullRequest,spark).coalesce(1).write.mode(SaveMode.Overwrite).parquet(reviewersPresentationOutput)
   println("-- REVIEWERS DIMENSION EXITO --")
 
-  PullRequestFactETL.getDataFrameBranch(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(pullRequestFactTable)
+  PullRequestFactETL.getDataFrameBranch(stagingPullRequest,spark).coalesce(1).write.mode(SaveMode.Overwrite).parquet(pullRequestFactTable)
   println("-- PULLREQUEST FACT TABLE  EXITO --")
 
  // PullRequestFactTablePresentationETL.getDataFrameBranch(stagingPullRequest,spark).show()
+
+  //AssigneesGroupBridgeETL.getDataFrame(stagingPullRequest,spark).coalesce(1).write.mode(SaveMode.Overwrite).parquet(prueba)
+  //println("-- ASIGNEES DIMENSION EXITO --")
+
+  //AssigneesGroupBridgeETL.getDataFrame(stagingPullRequest,spark).write.mode(SaveMode.Overwrite).parquet(asigneesPresentationOutput)
+ // println("-- ASIGNEES DIMENSION EXITO --")
+
+ // UserDimensionETL.getDataFrame(stagingUser,spark).coalesce(1).write.mode(SaveMode.Overwrite).parquet(pruebauser)
+  //println("-- USER DIMENSION EXITO --")
+
+  //println("user 1:"+spark.read.parquet(pruebauser).count())
+  //println("user normal:"+spark.read.parquet(userPresentationOutput).count())
+ // spark.read.parquet(pruebauser).show(100,false)
+ // println("asignees normal:"+spark.read.parquet(asigneesPresentationOutput).count())
 
 
 
