@@ -16,7 +16,6 @@ object UserDimensionETL {
   ): DataFrame = {
 
     val userDimension = stagingUserDF
-      .filter(col("type") === "User")
       .dropDuplicates("id")
       .withColumn("pk_id", lit(monotonically_increasing_id()))
       .withColumn("user_id", col("id"))
