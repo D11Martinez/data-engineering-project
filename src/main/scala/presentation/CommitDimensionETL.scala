@@ -1,4 +1,4 @@
-package Presentation
+package presentation
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
@@ -39,11 +39,19 @@ object CommitDimensionETL {
       )
       .distinct()
       .withColumn(
-        "message_with_good_practices",
-        validateMessageUDF(col("pull_request_commit_message"))
+        "sha",
+        when(col("pull_request_commit_sha").isNull, "Not available").otherwise(
+          col("pull_request_commit_sha")
+        )
       )
-      .select(
-        col("pull_request_commit_sha").as("sha"),
+      .withColumn(
+        "message_with_good_practices",
+        when(col("pull_request_commit_message").isNull, lit(null)).otherwise(
+          validateMessageUDF(col("pull_request_commit_message"))
+        )
+      )
+      .withColumn(
+        "message",
         when(col("pull_request_commit_message").isNull, "Message not available")
           .otherwise(
             when(
@@ -52,25 +60,40 @@ object CommitDimensionETL {
             )
               .otherwise(col("pull_request_commit_message"))
           )
-          .as("message"),
+      )
+      .withColumn(
+        "changes",
+        when(col("pull_request_commit_total_changes").isNull, 0)
+          .otherwise(col("pull_request_commit_total_changes"))
+      )
+      .withColumn(
+        "additions",
+        when(col("pull_request_commit_total_additions").isNull, 0)
+          .otherwise(col("pull_request_commit_total_additions"))
+      )
+      .withColumn(
+        "deletions",
+        when(col("pull_request_commit_total_deletions").isNull, 0)
+          .otherwise(col("pull_request_commit_total_deletions"))
+      )
+      .withColumn(
+        "comment_count",
+        when(col("pull_request_commit_comment_count").isNull, 0)
+          .otherwise(col("pull_request_commit_comment_count"))
+      )
+      .select(
+        col("sha"),
+        col("message"),
         when(
           col("message_with_good_practices") === true,
           "Good message"
         )
           .otherwise("It could be better")
           .as("message_with_good_practices"),
-        when(col("pull_request_commit_total_changes").isNull, 0)
-          .otherwise(col("pull_request_commit_total_changes"))
-          .as("changes"),
-        when(col("pull_request_commit_total_additions").isNull, 0)
-          .otherwise(col("pull_request_commit_total_additions"))
-          .as("additions"),
-        when(col("pull_request_commit_total_deletions").isNull, 0)
-          .otherwise(col("pull_request_commit_total_deletions"))
-          .as("deletions"),
-        when(col("pull_request_commit_comment_count").isNull, 0)
-          .otherwise(col("pull_request_commit_comment_count"))
-          .as("comment_count"),
+        col("changes"),
+        col("additions"),
+        col("deletions"),
+        col("comment_count"),
         when(col("pull_request_id").isNull, "Not available")
           .otherwise(col("pull_request_id"))
           .as("pull_request_id"),

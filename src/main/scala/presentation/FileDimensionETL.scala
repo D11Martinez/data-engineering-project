@@ -1,6 +1,5 @@
 package presentation
 
-import Presentation.NullDimension
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -30,18 +29,7 @@ object FileDimensionETL {
           "pull_request_commit_file_filename"
         )
         .withColumn(
-          "file_name",
-          getLastUDF(split(col("pull_request_commit_file_filename"), "/"))
-        )
-        .withColumn(
-          "file_path",
-          getFilePathUDF(split(col("pull_request_commit_file_filename"), "/"))
-        )
-        .withColumn(
-          "file_extension",
-          getLastUDF(split(col("file_name"), "\\."))
-        )
-        .select(
+          "sha",
           when(
             col("pull_request_commit_file_sha").isNull,
             "File sha not available"
@@ -53,25 +41,51 @@ object FileDimensionETL {
               )
                 .otherwise(col("pull_request_commit_file_sha"))
             )
-            .as("sha"),
+        )
+        .withColumn(
+          "file_name",
+          when(col("pull_request_commit_file_filename").isNull, lit(null)).otherwise(
+            getLastUDF(split(col("pull_request_commit_file_filename"), "/"))
+          )
+        )
+        .withColumn(
+          "name",
           when(col("file_name").isNull, "Filename not available")
             .otherwise(
               when(length(trim(col("file_name"))) === 0, "Empty value")
                 .otherwise(col("file_name"))
             )
-            .as("name"),
-          when(col("file_extension").isNull, "File extension not available")
-            .otherwise(
-              when(length(trim(col("file_extension"))) === 0, "Empty value")
-                .otherwise(col("file_extension"))
-            )
-            .as("extension"),
+        )
+        .withColumn(
+          "file_path",
+          when(col("pull_request_commit_file_filename").isNull, lit(null)).otherwise(
+            getFilePathUDF(split(col("pull_request_commit_file_filename"), "/"))
+          )
+        )
+        .withColumn(
+          "path",
           when(col("file_path").isNull, "File path not available")
             .otherwise(
               when(length(trim(col("file_path"))) === 0, "Root path")
                 .otherwise(col("file_path"))
             )
-            .as("path"),
+        )
+        .withColumn(
+          "file_extension",
+          when(col("file_name").isNull, lit(null)).otherwise(
+            getLastUDF(split(col("file_name"), "\\."))
+          )
+        )
+        .withColumn(
+          "extension",
+          when(col("file_extension").isNull, "File extension not available")
+            .otherwise(
+              when(length(trim(col("file_extension"))) === 0, "Empty value")
+                .otherwise(col("file_extension"))
+            )
+        )
+        .withColumn(
+          "full_file_name",
           when(
             col("pull_request_commit_file_filename").isNull,
             "Full filename not available"
@@ -83,7 +97,13 @@ object FileDimensionETL {
               )
                 .otherwise(col("pull_request_commit_file_filename"))
             )
-            .as("full_file_name")
+        )
+        .drop(
+          "pull_request_commit_file_sha",
+          "pull_request_commit_file_filename",
+          "file_name",
+          "file_path",
+          "file_extension"
         )
         .distinct()
         .withColumn("pk_id", monotonically_increasing_id())

@@ -1,4 +1,4 @@
-package Presentation
+package presentation
 
 import org.apache.spark.sql.functions.{col, monotonically_increasing_id, when}
 import org.apache.spark.sql.{DataFrame, SparkSession}
