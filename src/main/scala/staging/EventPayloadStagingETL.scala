@@ -62,6 +62,8 @@ object EventPayloadStagingETL {
           col("payload.pull_request.base.sha").as("pull_request_base_sha"),
           col("payload.pull_request.head").as("pull_request_head"),
           col("payload.pull_request.base").as("pull_request_base"),
+          col("payload.pull_request.head.repo").as("pull_request_head_repo"),
+          col("payload.pull_request.base.repo").as("pull_request_base_repo"),
           col("payload.pull_request.author_association").as(
             "pull_request_author_association"
           ),
@@ -92,6 +94,139 @@ object EventPayloadStagingETL {
           )
         )
         .withColumn(
+          "pull_request_head_repo_owner_id",
+          col("pull_request_head_repo.owner.id")
+        )
+        .withColumn(
+          "pull_request_head_ref",
+          col("pull_request_head.ref")
+        )
+        .withColumn(
+          "pull_request_head_repo_description",
+          col("pull_request_head_repo.description")
+        )
+        .withColumn(
+          "pull_request_head_repo_language",
+          col("pull_request_head_repo.language")
+        )
+        .withColumn(
+          "pull_request_head_repo_license",
+          col("pull_request_head_repo.license")
+        )
+        .withColumn(
+          "pull_request_head_repo_fork",
+          col("pull_request_head_repo.fork")
+        )
+        .withColumn(
+          "pull_request_head_repo_archived",
+          col("pull_request_head_repo.archived")
+        )
+        .withColumn(
+          "pull_request_head_repo_private",
+          col("pull_request_head_repo.private")
+        )
+        .withColumn(
+          "pull_request_head_repo_size",
+          col("pull_request_head_repo.size")
+        )
+        .withColumn(
+          "pull_request_head_repo_full_name",
+          col("pull_request_head_repo.full_name")
+        )
+        .withColumn(
+          "pull_request_head_repo_default_branch",
+          col("pull_request_head_repo.default_branch")
+        )
+        .withColumn(
+          "pull_request_head_repo_open_issues",
+          col("pull_request_head_repo.open_issues")
+        )
+        .withColumn(
+          "pull_request_head_repo_forks",
+          col("pull_request_head_repo.forks")
+        )
+        .withColumn(
+          "pull_request_head_repo_id",
+          col("pull_request_head_repo.id")
+        )
+        .withColumn(
+          "pull_request_head_repo_stargazers_count",
+          col("pull_request_head_repo.stargazers_count")
+        )
+        .withColumn(
+          "pull_request_head_repo_watchers_count",
+          col("pull_request_head_repo.watchers_count")
+        )
+        .withColumn(
+          "pull_request_head_repo_pushed_at",
+          col("pull_request_head_repo.pushed_at")
+        )
+        //aqui
+        .withColumn(
+          "pull_request_base_ref",
+          col("pull_request_base.ref")
+        )
+        .withColumn(
+          "pull_request_base_repo_description",
+          col("pull_request_base_repo.description")
+        )
+        .withColumn(
+          "pull_request_base_repo_language",
+          col("pull_request_base_repo.language")
+        )
+        .withColumn(
+          "pull_request_base_repo_license",
+          col("pull_request_base_repo.license")
+        )
+        .withColumn(
+          "pull_request_base_repo_fork",
+          col("pull_request_base_repo.fork")
+        )
+        .withColumn(
+          "pull_request_base_repo_archived",
+          col("pull_request_base_repo.archived")
+        )
+        .withColumn(
+          "pull_request_base_repo_private",
+          col("pull_request_base_repo.private")
+        )
+        .withColumn(
+          "pull_request_base_repo_size",
+          col("pull_request_base_repo.size")
+        )
+        .withColumn(
+          "pull_request_base_repo_full_name",
+          col("pull_request_base_repo.full_name")
+        )
+        .withColumn(
+          "pull_request_base_repo_default_branch",
+          col("pull_request_base_repo.default_branch")
+        )
+        .withColumn(
+          "pull_request_base_repo_open_issues",
+          col("pull_request_base_repo.open_issues")
+        )
+        .withColumn(
+          "pull_request_base_repo_forks",
+          col("pull_request_base_repo.forks")
+        )
+        .withColumn(
+          "pull_request_base_repo_id",
+          col("pull_request_base_repo.id")
+        )
+        .withColumn(
+          "pull_request_base_repo_stargazers_count",
+          col("pull_request_base_repo.stargazers_count")
+        )
+        .withColumn(
+          "pull_request_base_repo_watchers_count",
+          col("pull_request_base_repo.watchers_count")
+        )
+        .withColumn(
+          "pull_request_base_repo_pushed_at",
+          col("pull_request_base_repo.pushed_at")
+        )
+        .withColumn(
           "pull_request_commit",
           explode_outer(col("pull_request_commits_list"))
         )
@@ -99,18 +234,10 @@ object EventPayloadStagingETL {
           "pull_request_requested_reviewer",
           explode_outer(col("pull_request_requested_reviewers_list"))
         )
-        /* .withColumn(
-          "pull_request_requested_reviewer_id",when(col("pull_request_requested_reviewer")=!= -1,
-            col("pull_request_requested_reviewer.id")).otherwise(-1)
-        )*/
         .withColumn(
           "pull_request_assignees_item",
           explode_outer(col("pull_request_assignees_list"))
         )
-        /* .withColumn(
-          "pull_request_assignees_id",when(col("pull_request_assignees_item") =!= -1,
-            col("pull_request_assignees_item.id")).otherwise(-1)
-        )*/
         .withColumn(
           "create_at_time_temporal",
           date_format(col("pull_request_created_at"), "HH:mm:ss")
@@ -123,7 +250,11 @@ object EventPayloadStagingETL {
           "pull_request_commits_list",
           "pull_request_requested_reviewers_list",
           //"pull_request_requested_reviewer",
-          "pull_request_assignees_list"
+          "pull_request_assignees_list",
+          "pull_request_base_repo",
+          "pull_request_head_repo",
+          "pull_request_base",
+          "pull_request_head"
           //"pull_request_assignees_item"
         )
 
@@ -273,10 +404,15 @@ object EventPayloadStagingETL {
         "pull_request_commit_parent",
         explode_outer(col("pull_request_commit_parents"))
       )
+      .withColumn(
+        "pull_request_commit_parent_sha",
+        col("pull_request_commit_parent.sha")
+      )
       .drop(
         "pull_request_commit_file",
         "pull_request_commit",
-        "pull_request_commit_parents"
+        "pull_request_commit_parents",
+        "pull_request_commit_parent"
       )
 
     eventPayloadDF.printSchema(3)

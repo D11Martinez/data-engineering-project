@@ -41,11 +41,11 @@ object FileChangesFactETL {
       eventPayloadStagingDF
         .select(
           col("pull_request_commit_sha"),
+          col("pull_request_commit_parent_sha"),
           col("pull_request_head_sha"),
           col("pull_request_commit_author_id"),
           col("pull_request_commit_committer_id"),
-          col("pull_request_head.repo.owner.id")
-            .as("pull_request_head_repo_owner_id"),
+          col("pull_request_head_repo_owner_id"),
           col("pull_request_commit_file_sha"),
           col("org_id"),
           col("pull_request_commit_file_additions").as("file_additions"),
@@ -58,11 +58,15 @@ object FileChangesFactETL {
         .distinct()
         .withColumn(
           "committed_at_time",
-          date_format(col("pull_request_commit_committer_date"), "HH:mm:ss")
+          date_format(col("pull_request_commit_committer_date"), "HHmmss")
         )
         .withColumn(
           "committed_at_date",
-          date_format(col("pull_request_commit_committer_date"), "yyyy-MM-dd")
+          date_format(col("pull_request_commit_committer_date"), "yyyyMMdd")
+        )
+        .withColumn(
+          "commiter_date",
+          regexp_replace(col("pull_request_commit_committer_date"),"T"," ")
         )
         .select("*")
 
@@ -73,7 +77,7 @@ object FileChangesFactETL {
       "sha",
       "pk_id",
       "commit_id"
-    ).drop("pull_request_commit_sha")
+    )//.drop("pull_request_commit_sha")
 
     val fileChangesFactWithFilesDF = applyLeftJoin(
       fileChangesFactWithCommitsDF,
@@ -170,15 +174,53 @@ object FileChangesFactETL {
         col("file_status"),
         col("byte_changes"),
         col("committed_at_time"),
-        col("committed_at_date")
+        col("committed_at_date"),
+        regexp_replace(col("commiter_date"),"Z","").as("commiter_date"),
+        col("pull_request_commit_sha"),
+        col("pull_request_commit_parent_sha"),
       )
       .distinct()
       .select("*")
       .withColumn("pk_id", monotonically_increasing_id())
 
-    fileChangesFactDF.printSchema(3)
-    fileChangesFactDF.show(10)
+    val fileChangesFactDF2 = fileChangesFactDF.dropDuplicates("pull_request_commit_sha")
+      .withColumnRenamed("pull_request_commit_sha","pull_request_commit_sha2")
 
-    fileChangesFactDF
+    val fileChangesFactDF3 = fileChangesFactDF.as("fileChangesFactDF")
+      .join(fileChangesFactDF2.as("fileChangesFactDF2"),
+        fileChangesFactDF("pull_request_commit_parent_sha")===fileChangesFactDF2("pull_request_commit_sha2"),
+        "left")
+      .withColumn("commiter_parent_date",col("fileChangesFactDF2.commiter_date"))
+      .select("fileChangesFactDF.*","commiter_parent_date")
+      .na
+      .fill("Not available")
+
+    val fileChangesFactDF4 = fileChangesFactDF3
+      .withColumn(
+        "commiter_date_second",
+        unix_timestamp(col("commiter_date"))
+      )
+      .withColumn(
+      "commiter_parent_date_second",
+        when(col("commiter_parent_date") =!="Not available",
+        unix_timestamp(col("commiter_parent_date")))
+          .otherwise(col("commiter_parent_date"))
+    ).withColumn("diferent_time_commit",
+      when(col("commiter_parent_date_second")=!="Not available",
+        (col("commiter_date_second")-col("commiter_parent_date_second"))/3600)
+        .otherwise(0)
+
+    )
+      .drop(
+      "commiter_date",
+      "commiter_parent_date",
+        "commiter_date_second",
+        "commiter_parent_date_second"
+    )
+
+    //fileChangesFactDF3.printSchema(3)
+    fileChangesFactDF4.show(10,false)
+   // println("cantidad de registros:"+fileChangesFactDF3.count())
+    fileChangesFactDF4
   }
 }
