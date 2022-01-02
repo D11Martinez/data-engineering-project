@@ -58,11 +58,13 @@ object FileChangesFactETL {
         .distinct()
         .withColumn(
           "committed_at_time",
-          date_format(col("pull_request_commit_committer_date"), "HHmmss")
+          when(col("pull_request_commit_committer_date").isNull,-1).
+            otherwise(date_format(col("pull_request_commit_committer_date"), "HHmmss"))
         )
         .withColumn(
           "committed_at_date",
-          date_format(col("pull_request_commit_committer_date"), "yyyyMMdd")
+          when(col("pull_request_commit_committer_date").isNull,-1).
+            otherwise(date_format(col("pull_request_commit_committer_date"), "yyyyMMdd"))
         )
         .withColumn(
           "commiter_date",
@@ -191,14 +193,18 @@ object FileChangesFactETL {
         fileChangesFactDF("pull_request_commit_parent_sha")===fileChangesFactDF2("pull_request_commit_sha2"),
         "left")
       .withColumn("commiter_parent_date",col("fileChangesFactDF2.commiter_date"))
-      .select("fileChangesFactDF.*","commiter_parent_date")
+      .select(col("fileChangesFactDF.*"),
+              col("commiter_parent_date")
+      )
       .na
       .fill("Not available")
 
     val fileChangesFactDF4 = fileChangesFactDF3
       .withColumn(
         "commiter_date_second",
-        unix_timestamp(col("commiter_date"))
+        when(col("commiter_date")=!= "Not available",
+          unix_timestamp(col("commiter_date")))
+          .otherwise(col("commiter_date"))
       )
       .withColumn(
       "commiter_parent_date_second",
@@ -207,13 +213,19 @@ object FileChangesFactETL {
           .otherwise(col("commiter_parent_date"))
     ).withColumn("diferent_time_commit",
       when(col("commiter_parent_date_second")=!="Not available",
-        (col("commiter_date_second")-col("commiter_parent_date_second"))/3600)
+       round((col("commiter_date_second")-col("commiter_parent_date_second"))/3600,2))
         .otherwise(0)
 
+    ).withColumnRenamed(
+      "commiter_date",
+      "committed_at_date_full"
+    ).withColumnRenamed(
+      "commiter_parent_date",
+      "committed_at_parent_date_full"
     )
       .drop(
-      "commiter_date",
-      "commiter_parent_date",
+     // "commiter_date",
+     // "commiter_parent_date",
         "commiter_date_second",
         "commiter_parent_date_second"
     )
