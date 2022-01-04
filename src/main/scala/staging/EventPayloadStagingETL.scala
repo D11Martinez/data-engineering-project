@@ -251,8 +251,8 @@ object EventPayloadStagingETL {
           "pull_request_requested_reviewers_list",
           //"pull_request_requested_reviewer",
           "pull_request_assignees_list",
-          "pull_request_base_repo",
-          "pull_request_head_repo",
+          //"pull_request_base_repo",
+          //"pull_request_head_repo",
           "pull_request_base",
           "pull_request_head"
           //"pull_request_assignees_item"
