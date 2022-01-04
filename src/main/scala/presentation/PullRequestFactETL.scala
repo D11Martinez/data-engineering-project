@@ -1,20 +1,15 @@
 package presentation
 
-import org.apache.spark.sql.functions.{
-  col,
-  date_format,
-  monotonically_increasing_id,
-  when
-}
+import org.apache.spark.sql.functions.{col, date_format, monotonically_increasing_id, when}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object PullRequestFactETL {
 
-  val userPresentationOutput = "src/dataset/presentation2/users-dimension"
-  val orgPresentationOutput = "src/dataset/presentation2/organizations-dimension"
+  val userPresentationOutput = "src/dataset/presentation/users-dimension"
+  val orgPresentationOutput = "src/dataset/presentation/organizations-dimension"
   val pullRequestPresentationOutput =
-    "src/dataset/presentation2/pullrequest-dimension"
-  val branchPresentationOutput = "src/dataset/presentation2/branch-dimension"
+    "src/dataset/presentation/pullrequest-dimension"
+  val branchPresentationOutput = "src/dataset/presentation/branch-dimension"
 
   def getDataFrameBranch(
       stagingPullRequestDF: DataFrame,
@@ -48,10 +43,10 @@ object PullRequestFactETL {
         col("pull_request_user_id").as("user_id"),
         col("pull_request_head_repo.owner.id").as("owner_repo_id"),
         col("org_id").as("organization_id"),
-        when(col("create_at_date_temporal").isNull,-1)
+        when(col("create_at_date_temporal").isNull, -1)
           .otherwise(date_format(col("create_at_date_temporal"), "yyyyMMdd"))
           .as("created_at_date"),
-        when(col("create_at_time_temporal").isNull,-1)
+        when(col("create_at_time_temporal").isNull, -1)
           .otherwise(date_format(col("create_at_time_temporal"), "HHmmss"))
           .as("created_at_time"),
         col("pull_request_state").as("state"),
@@ -96,7 +91,7 @@ object PullRequestFactETL {
         col("reviewers_group_id")
       )
 
-   // println("cantidad rows staging:" + pullRequestStaging.count())
+    // println("cantidad rows staging:" + pullRequestStaging.count())
 
     val pullRequestFact1 = pullRequestStaging
       .as("stagingPullFact")
@@ -110,7 +105,7 @@ object PullRequestFactETL {
       .withColumn("pk_id_pull", col("pullRequestDim.pk_id"))
       .select("stagingPullFact.*", "pk_id_pull")
 
-   // println("cantidad rows pullRequestFact1:" + pullRequestFact1.count())
+    // println("cantidad rows pullRequestFact1:" + pullRequestFact1.count())
 
     val pullRequestFact2 = pullRequestFact1
       .as("pullRequestFact1")
@@ -122,7 +117,7 @@ object PullRequestFactETL {
       .withColumn("pk_id_branch_head", col("branchHeadDim.pk_id"))
       .select("pullRequestFact1.*", "pk_id_branch_head")
 
-   // println("cantidad rows pullRequestFact2:" + pullRequestFact2.count())
+    // println("cantidad rows pullRequestFact2:" + pullRequestFact2.count())
 
     val pullRequestFact3 = pullRequestFact2
       .as("pullRequestFact2")
@@ -134,7 +129,7 @@ object PullRequestFactETL {
       .withColumn("pk_id_branch_base", col("branchBaseDim.pk_id"))
       .select("pullRequestFact2.*", "pk_id_branch_base")
 
-   // println("cantidad rows pullRequestFact3:" + pullRequestFact3.count())
+    // println("cantidad rows pullRequestFact3:" + pullRequestFact3.count())
 
     val pullRequestFact4 = pullRequestFact3
       .as("pullRequestFact3")
@@ -158,7 +153,7 @@ object PullRequestFactETL {
       .withColumn("pk_id_merged", col("userMerged.pk_id"))
       .select("pullRequestFact4.*", "pk_id_merged")
 
-   // println("cantidad rows pullRequestFact5:" + pullRequestFact5.count())
+    // println("cantidad rows pullRequestFact5:" + pullRequestFact5.count())
 
     val pullRequestFact6 = pullRequestFact5
       .as("pullRequestFact5")

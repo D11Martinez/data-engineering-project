@@ -58,17 +58,17 @@ object FileChangesFactETL {
         .distinct()
         .withColumn(
           "committed_at_time",
-          when(col("pull_request_commit_committer_date").isNull,-1).
-            otherwise(date_format(col("pull_request_commit_committer_date"), "HHmmss"))
+          when(col("pull_request_commit_committer_date").isNull, -1)
+            .otherwise(date_format(col("pull_request_commit_committer_date"), "HHmmss"))
         )
         .withColumn(
           "committed_at_date",
-          when(col("pull_request_commit_committer_date").isNull,-1).
-            otherwise(date_format(col("pull_request_commit_committer_date"), "yyyyMMdd"))
+          when(col("pull_request_commit_committer_date").isNull, -1)
+            .otherwise(date_format(col("pull_request_commit_committer_date"), "yyyyMMdd"))
         )
         .withColumn(
           "commiter_date",
-          regexp_replace(col("pull_request_commit_committer_date"),"T"," ")
+          regexp_replace(col("pull_request_commit_committer_date"), "T", " ")
         )
         .select("*")
 
@@ -79,7 +79,7 @@ object FileChangesFactETL {
       "sha",
       "pk_id",
       "commit_id"
-    )//.drop("pull_request_commit_sha")
+    ) //.drop("pull_request_commit_sha")
 
     val fileChangesFactWithFilesDF = applyLeftJoin(
       fileChangesFactWithCommitsDF,
@@ -137,7 +137,7 @@ object FileChangesFactETL {
 
     val fileChangesFactDF = fileChangesFactWithBranchDF
       .withColumn(
-        "byte_changes",
+        "bytes_changes",
         when(col("file_patch").isNull, lit(0)).otherwise(
           length(col("file_patch"))
         )
@@ -174,65 +174,75 @@ object FileChangesFactETL {
           .otherwise(col("file_changes"))
           .as("changes"),
         col("file_status"),
-        col("byte_changes"),
+        col("bytes_changes"),
         col("committed_at_time"),
         col("committed_at_date"),
-        regexp_replace(col("commiter_date"),"Z","").as("commiter_date"),
+        regexp_replace(col("commiter_date"), "Z", "").as("commiter_date"),
         col("pull_request_commit_sha"),
-        col("pull_request_commit_parent_sha"),
+        col("pull_request_commit_parent_sha")
       )
       .distinct()
       .select("*")
       .withColumn("pk_id", monotonically_increasing_id())
 
-    val fileChangesFactDF2 = fileChangesFactDF.dropDuplicates("pull_request_commit_sha")
-      .withColumnRenamed("pull_request_commit_sha","pull_request_commit_sha2")
+    val fileChangesFactDF2 = fileChangesFactDF
+      .dropDuplicates("pull_request_commit_sha")
+      .withColumnRenamed("pull_request_commit_sha", "pull_request_commit_sha2")
 
-    val fileChangesFactDF3 = fileChangesFactDF.as("fileChangesFactDF")
-      .join(fileChangesFactDF2.as("fileChangesFactDF2"),
-        fileChangesFactDF("pull_request_commit_parent_sha")===fileChangesFactDF2("pull_request_commit_sha2"),
-        "left")
-      .withColumn("commiter_parent_date",col("fileChangesFactDF2.commiter_date"))
-      .select(col("fileChangesFactDF.*"),
-              col("commiter_parent_date")
+    val fileChangesFactDF3 = fileChangesFactDF
+      .as("fileChangesFactDF")
+      .join(
+        fileChangesFactDF2.as("fileChangesFactDF2"),
+        fileChangesFactDF("pull_request_commit_parent_sha") === fileChangesFactDF2(
+          "pull_request_commit_sha2"
+        ),
+        "left"
       )
+      .withColumn("commiter_parent_date", col("fileChangesFactDF2.commiter_date"))
+      .select(col("fileChangesFactDF.*"), col("commiter_parent_date"))
       .na
       .fill("Not available")
 
     val fileChangesFactDF4 = fileChangesFactDF3
       .withColumn(
         "commiter_date_second",
-        when(col("commiter_date")=!= "Not available",
-          unix_timestamp(col("commiter_date")))
+        when(col("commiter_date") =!= "Not available", unix_timestamp(col("commiter_date")))
           .otherwise(col("commiter_date"))
       )
       .withColumn(
-      "commiter_parent_date_second",
-        when(col("commiter_parent_date") =!="Not available",
-        unix_timestamp(col("commiter_parent_date")))
+        "commiter_parent_date_second",
+        when(
+          col("commiter_parent_date") =!= "Not available",
+          unix_timestamp(col("commiter_parent_date"))
+        )
           .otherwise(col("commiter_parent_date"))
-    ).withColumn("diferent_time_commit",
-      when(col("commiter_parent_date_second")=!="Not available",
-       round((col("commiter_date_second")-col("commiter_parent_date_second"))/3600,2))
-        .otherwise(0)
-
-    ).withColumnRenamed(
-      "commiter_date",
-      "committed_at_date_full"
-    ).withColumnRenamed(
-      "commiter_parent_date",
-      "committed_at_parent_date_full"
-    )
+      )
+      .withColumn(
+        "diferent_time_commit",
+        when(
+          col("commiter_parent_date_second") =!= "Not available",
+          round((col("commiter_date_second") - col("commiter_parent_date_second")) / 3600, 2)
+        )
+          .otherwise(0)
+      )
+      .withColumnRenamed(
+        "commiter_date",
+        "committed_at_date_full"
+      )
+      .withColumnRenamed(
+        "commiter_parent_date",
+        "committed_at_parent_date_full"
+      )
       .drop(
-     // "commiter_date",
-     // "commiter_parent_date",
+        // "commiter_date",
+        // "commiter_parent_date",
         "commiter_date_second",
         "commiter_parent_date_second"
-    )
+      )
 
     //fileChangesFactDF3.printSchema(3)
-    fileChangesFactDF4.show(10,false)
-   // println("cantidad de registros:"+fileChangesFactDF3.count())
+    fileChangesFactDF4.show(10, false)
+    // println("cantidad de registros:"+fileChangesFactDF3.count())
     fileChangesFactDF4
   }
 }
