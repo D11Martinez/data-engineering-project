@@ -21,38 +21,38 @@ object UserStagingETL {
 
   val userStagingSchema: StructType = StructType(
     Array(
-      StructField("id", LongType, true),
-      StructField("login", StringType, true),
-      StructField("node_id", StringType, true),
-      StructField("avatar_url", StringType, true),
-      StructField("gravatar_id", StringType, true),
-      StructField("url", StringType, true),
-      StructField("html_url", StringType, true),
-      StructField("followers_url", StringType, true),
-      StructField("following_url", StringType, true),
-      StructField("gists_url", StringType, true),
-      StructField("starred_url", StringType, true),
-      StructField("subscriptions_url", StringType, true),
-      StructField("organizations_url", StringType, true),
-      StructField("repos_url", StringType, true),
-      StructField("events_url", StringType, true),
-      StructField("received_events_url", StringType, true),
-      StructField("type", StringType, true),
-      StructField("site_admin", BooleanType, true),
-      StructField("name", StringType, true),
-      StructField("company", StringType, true),
-      StructField("blog", StringType, true),
-      StructField("location", StringType, true),
-      StructField("email", StringType, true),
-      StructField("hireable", BooleanType, true),
-      StructField("bio", StringType, true),
-      StructField("twitter_username", StringType, true),
-      StructField("public_repos", LongType, true),
-      StructField("public_gists", LongType, true),
-      StructField("followers", LongType, true),
-      StructField("following", LongType, true),
-      StructField("created_at", StringType, true),
-      StructField("updated_at", StringType, true)
+      StructField("id", LongType, nullable = true),
+      StructField("login", StringType, nullable = true),
+      StructField("node_id", StringType, nullable = true),
+      StructField("avatar_url", StringType, nullable = true),
+      StructField("gravatar_id", StringType, nullable = true),
+      StructField("url", StringType, nullable = true),
+      StructField("html_url", StringType, nullable = true),
+      StructField("followers_url", StringType, nullable = true),
+      StructField("following_url", StringType, nullable = true),
+      StructField("gists_url", StringType, nullable = true),
+      StructField("starred_url", StringType, nullable = true),
+      StructField("subscriptions_url", StringType, nullable = true),
+      StructField("organizations_url", StringType, nullable = true),
+      StructField("repos_url", StringType, nullable = true),
+      StructField("events_url", StringType, nullable = true),
+      StructField("received_events_url", StringType, nullable = true),
+      StructField("type", StringType, nullable = true),
+      StructField("site_admin", BooleanType, nullable = true),
+      StructField("name", StringType, nullable = true),
+      StructField("company", StringType, nullable = true),
+      StructField("blog", StringType, nullable = true),
+      StructField("location", StringType, nullable = true),
+      StructField("email", StringType, nullable = true),
+      StructField("hireable", BooleanType, nullable = true),
+      StructField("bio", StringType, nullable = true),
+      StructField("twitter_username", StringType, nullable = true),
+      StructField("public_repos", LongType, nullable = true),
+      StructField("public_gists", LongType, nullable = true),
+      StructField("followers", LongType, nullable = true),
+      StructField("following", LongType, nullable = true),
+      StructField("created_at", StringType, nullable = true),
+      StructField("updated_at", StringType, nullable = true)
     )
   )
   def parseToUser(
@@ -138,15 +138,9 @@ object UserStagingETL {
       sparkSession,
       temporalActorsOutput
     )
-      .unionByName(
-        parseToUser(ownerDF, sparkSession, temporalOwnersOutput)
-      )
-      .unionByName(
-        parseToUser(pullRequestUserDF, sparkSession, temporalPRUsersOutput)
-      )
-      .unionByName(
-        parseToUser(mergedByDF, sparkSession, temporalMergedByOutput)
-      )
+      .unionByName(parseToUser(ownerDF, sparkSession, temporalOwnersOutput))
+      .unionByName(parseToUser(pullRequestUserDF, sparkSession, temporalPRUsersOutput))
+      .unionByName(parseToUser(mergedByDF, sparkSession, temporalMergedByOutput))
       .unionByName(
         parseToUser(
           pullRequestAssigneeDF,
@@ -161,12 +155,8 @@ object UserStagingETL {
           temporalPRAssigneesOutput
         )
       )
-      .unionByName(
-        parseToUser(reviewersDF, sparkSession, temporalPRReviewersOutput)
-      )
-      .unionByName(
-        parseToUser(commitAuthorDF, sparkSession, temporalCommitAuthorOutput)
-      )
+      .unionByName(parseToUser(reviewersDF, sparkSession, temporalPRReviewersOutput))
+      .unionByName(parseToUser(commitAuthorDF, sparkSession, temporalCommitAuthorOutput))
       .unionByName(
         parseToUser(
           commitCommitterDF,
