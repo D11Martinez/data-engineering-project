@@ -1,11 +1,6 @@
 package presentation
 
-import org.apache.spark.sql.functions.{
-  col,
-  lit,
-  monotonically_increasing_id,
-  when
-}
+import org.apache.spark.sql.functions.{col, lit, monotonically_increasing_id, when}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object BranchDimensionETL {
@@ -22,7 +17,8 @@ object BranchDimensionETL {
         col("protected_branch"),
         col("pull_request_head_repo_full_name").as("full_name_repo"),
         when(col("pull_request_head_repo_description").isNull, "Description not available")
-          .otherwise(col("pull_request_head_repo_description")).as("description_repo"),
+          .otherwise(col("pull_request_head_repo_description"))
+          .as("description_repo"),
         col("pull_request_head_repo_default_branch").as("default_branch_repo"),
         when(col("pull_request_head_repo_language").isNull, "Languge not available")
           .otherwise(col("pull_request_head_repo_language"))
@@ -56,8 +52,8 @@ object BranchDimensionETL {
   }
 
   def getDataFrameBranchBase(
-                              stagingPullRequestDF: DataFrame
-                            ): DataFrame = {
+      stagingPullRequestDF: DataFrame
+  ): DataFrame = {
 
     val branchDimension = stagingPullRequestDF
       .withColumn("protected_branch", lit("Not available"))
@@ -68,7 +64,8 @@ object BranchDimensionETL {
         col("protected_branch"),
         col("pull_request_base_repo_full_name").as("full_name_repo"),
         when(col("pull_request_base_repo_description").isNull, "Description not available")
-          .otherwise(col("pull_request_base_repo_description")).as("description_repo"),
+          .otherwise(col("pull_request_base_repo_description"))
+          .as("description_repo"),
         col("pull_request_base_repo_default_branch").as("default_branch_repo"),
         when(col("pull_request_base_repo_language").isNull, "Languge not available")
           .otherwise(col("pull_request_base_repo_language"))
@@ -135,8 +132,8 @@ object BranchDimensionETL {
 
     val branchUnionDF = branchUnique.unionByName(branchNUll)
 
-   // branchUnionDF.printSchema(3)
-   // branchUnionDF.show(10)
+    // branchUnionDF.printSchema(3)
+    // branchUnionDF.show(10)
 
     branchUnionDF
 

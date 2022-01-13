@@ -28,11 +28,17 @@ object NullDimension {
     "updated_at",
     "public_repos",
     "followers",
-    "following"
+    "following",
+    "public_repos_category",
+    "followers_category",
+    "following_category"
   )
   val OrgDataNull = Seq(
     (
       -1,
+      "Undefined",
+      "Undefined",
+      "Undefined",
       "Undefined",
       "Undefined",
       "Undefined",
@@ -73,11 +79,17 @@ object NullDimension {
     "updated_at",
     "followers",
     "following",
-    "public_repos"
+    "public_repos",
+    "followers_category",
+    "following_category",
+    "public_repos_category"
   )
   val UserDataNull = Seq(
     (
       -1,
+      "Undefined",
+      "Undefined",
+      "Undefined",
       "Undefined",
       "Undefined",
       "Undefined",
