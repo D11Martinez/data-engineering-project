@@ -1,15 +1,10 @@
 package presentation
 
-import org.apache.spark.sql.functions.{
-  col,
-  lit,
-  monotonically_increasing_id,
-  when
-}
+import org.apache.spark.sql.functions.{col, lit, monotonically_increasing_id, when}
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import presentation.CustomUDF.getIntervalCategory
 
 object OrgDimensionETL {
-
   def getDataFrame(
       stagingOrgDF: DataFrame,
       sparkSession: SparkSession
@@ -74,15 +69,30 @@ object OrgDimensionETL {
         when(col("updated_at").isNull, "Updated at not available")
           .otherwise(col("updated_at"))
           .as("updated_at"),
-        when(col("public_repos").isNull, "Public repos at not available")
+        when(col("public_repos").isNull, "Public repos not available")
           .otherwise(col("public_repos"))
           .as("public_repos"),
-        when(col("followers").isNull, "Followers repos at not available")
+        when(col("followers").isNull, "Followers not available")
           .otherwise(col("followers"))
           .as("followers"),
-        when(col("following").isNull, "Following repos at not available")
+        when(col("following").isNull, "Following not available")
           .otherwise(col("following"))
           .as("following")
+      )
+      .withColumn(
+        "followers_category",
+        when(col("followers") === "Followers not available", col("followers"))
+          .otherwise(getIntervalCategory(col("followers")))
+      )
+      .withColumn(
+        "following_category",
+        when(col("following") === "Following not available", col("following"))
+          .otherwise(getIntervalCategory(col("following")))
+      )
+      .withColumn(
+        "public_repos_category",
+        when(col("public_repos") === "Public repos not available", col("public_repos"))
+          .otherwise(getIntervalCategory(col("public_repos")))
       )
 
     val orgNull = sparkSession

@@ -1,15 +1,10 @@
 package presentation
 
-import org.apache.spark.sql.functions.{
-  col,
-  lit,
-  monotonically_increasing_id,
-  when
-}
+import org.apache.spark.sql.functions.{col, lit, monotonically_increasing_id, when}
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import presentation.CustomUDF.getIntervalCategory
 
 object UserDimensionETL {
-
   def getDataFrame(
       stagingUserDF: DataFrame,
       sparkSession: SparkSession
@@ -96,6 +91,21 @@ object UserDimensionETL {
         when(col("public_repos").isNull, "Public repos not available")
           .otherwise(col("public_repos"))
       )
+      .withColumn(
+        "followers_category",
+        when(col("followers") === "Followers not available", col("followers"))
+          .otherwise(getIntervalCategory(col("followers")))
+      )
+      .withColumn(
+        "following_category",
+        when(col("following") === "Following not available", col("following"))
+          .otherwise(getIntervalCategory(col("following")))
+      )
+      .withColumn(
+        "public_repos_category",
+        when(col("public_repos") === "Public repos not available", col("public_repos"))
+          .otherwise(getIntervalCategory(col("public_repos")))
+      )
       .select(
         col("pk_id"),
         col("user_id"),
@@ -114,7 +124,10 @@ object UserDimensionETL {
         col("updated_at"),
         col("followers"),
         col("following"),
-        col("public_repos")
+        col("public_repos"),
+        col("followers_category"),
+        col("following_category"),
+        col("public_repos_category")
       )
 
     val userNull = sparkSession

@@ -19,8 +19,10 @@ object AssigneesGroupBridgeETL {
         col("pull_request_id").as("asignees_group_id"),
         col("pull_request_assignees_item.id").as("user_dim_id")
       )
+      .distinct()
+      .select("*")
 
-    val assigneesDF2 = assigneesDF
+    val assigneesWithUserDimDF = assigneesDF
       .as("asignees")
       .join(
         userDim.as("user"),
@@ -34,10 +36,9 @@ object AssigneesGroupBridgeETL {
 
     val ColumnNull = Seq("asignees_group_id", "user_dim_id")
     val DataNull = Seq((-1, -1))
-    val assigneesNull =
-      sparkSession.createDataFrame(DataNull).toDF(ColumnNull: _*)
+    val assigneesNull = sparkSession.createDataFrame(DataNull).toDF(ColumnNull: _*)
 
-    val assigneesUnionDF = assigneesDF2.unionByName(assigneesNull)
+    val assigneesUnionDF = assigneesWithUserDimDF.unionByName(assigneesNull).distinct().select("*")
 
     assigneesUnionDF.printSchema(3)
     assigneesUnionDF.show(10)

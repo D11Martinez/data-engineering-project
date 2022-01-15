@@ -20,8 +20,10 @@ object ReviewersGroupBridgeETL {
         col("pull_request_id").as("reviewers_group_id"),
         col("pull_request_requested_reviewer.id").as("user_dim_id")
       )
+      .distinct()
+      .select("*")
 
-    val reviewersDF2 = reviewersDF
+    val reviewersWithUserDimDF = reviewersDF
       .as("reviewers")
       .join(
         userDim.as("user"),
@@ -35,10 +37,9 @@ object ReviewersGroupBridgeETL {
 
     val ColumnNull = Seq("reviewers_group_id", "user_dim_id")
     val DataNull = Seq((-1, -1))
-    val reviewersNull =
-      sparkSession.createDataFrame(DataNull).toDF(ColumnNull: _*)
+    val reviewersNull = sparkSession.createDataFrame(DataNull).toDF(ColumnNull: _*)
 
-    val reviewersUnionDF = reviewersDF2.unionByName(reviewersNull)
+    val reviewersUnionDF = reviewersWithUserDimDF.unionByName(reviewersNull).distinct().select("*")
 
     reviewersUnionDF.printSchema(3)
     reviewersUnionDF.show(10)
