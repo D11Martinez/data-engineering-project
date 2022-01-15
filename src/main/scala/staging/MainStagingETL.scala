@@ -17,7 +17,6 @@ object MainStagingETL extends App {
     .master("local[*]")
     .appName("SparkTest")
     .getOrCreate()
-
   val rawPullRequestsDF = spark.read
     .option("inferSchema", "true")
     .json(rawPullRequestPath)

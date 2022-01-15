@@ -2,8 +2,7 @@ package presentation
 object NullDimension {
 
   // PULL REQUEST DIMENSION
-  val PullRequestColumnNull =
-    Seq("pk_id", "pull_request_id", "number", "title", "body", "locked")
+  val PullRequestColumnNull = Seq("pk_id", "pull_request_id", "number", "title", "body", "locked")
   val PullRequestDataNull = Seq(
     (-1, "Undefined", "Undefined", "Undefined", "Undefined", "Undefined")
   )

@@ -1,7 +1,6 @@
 package presentation
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import presentation.{FileChangesFactETL, FileDimensionETL}
 object MainPresentationETL extends App {
 
   // these are the default paths staging
