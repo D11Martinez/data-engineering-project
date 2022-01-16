@@ -4,11 +4,11 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object FileChangesFactETL {
-  val commitDimensionSource = "src/dataset/presentation2/commit-dimension"
-  val fileDimensionSource = "src/dataset/presentation2/file-dimension"
-  val orgDimensionSource = "src/dataset/presentation2/organizations-dimension"
-  val branchDimensionSource = "src/dataset/presentation2/branch-dimension"
-  val userDimensionSource = "src/dataset/presentation2/users-dimension"
+  val commitDimensionSource = "src/dataset/presentation/commit-dimension"
+  val fileDimensionSource = "src/dataset/presentation/file-dimension"
+  val orgDimensionSource = "src/dataset/presentation/organizations-dimension"
+  val branchDimensionSource = "src/dataset/presentation/branch-dimension"
+  val userDimensionSource = "src/dataset/presentation/users-dimension"
 
   def applyLeftJoin(
       leftDF: DataFrame,

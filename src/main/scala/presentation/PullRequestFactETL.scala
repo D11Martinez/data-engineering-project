@@ -1,6 +1,14 @@
 package presentation
 
-import org.apache.spark.sql.functions.{col, date_format, monotonically_increasing_id, regexp_replace, round, unix_timestamp, when}
+import org.apache.spark.sql.functions.{
+  col,
+  date_format,
+  monotonically_increasing_id,
+  regexp_replace,
+  round,
+  unix_timestamp,
+  when
+}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object PullRequestFactETL {
@@ -33,30 +41,27 @@ object PullRequestFactETL {
         "reviewers_group_id",
         when(col("pull_request_requested_reviewer").isNull, -1)
           .otherwise(col("pull_request_id"))
-      ).withColumn(
-      "created_at_second",
-      unix_timestamp(
-        regexp_replace(
-        regexp_replace(
-          col("pull_request_created_at"),
-          "Z", ""),
-        "T", " "))
-    ).withColumn(
-      "updated_at_second",
-      unix_timestamp(
-        regexp_replace(
-          regexp_replace(
-            col("pull_request_updated_at"),
-            "Z", ""),
-          "T", " "))
-    ).withColumn(
-      "different_time_pullrequest",
-      when(
-        col("updated_at_second").isNotNull && col("created_at_second").isNotNull,
-        round((col("updated_at_second") - col("created_at_second")) / 3600, 2)
       )
-        .otherwise(0)
-    )
+      .withColumn(
+        "created_at_second",
+        unix_timestamp(
+          regexp_replace(regexp_replace(col("pull_request_created_at"), "Z", ""), "T", " ")
+        )
+      )
+      .withColumn(
+        "updated_at_second",
+        unix_timestamp(
+          regexp_replace(regexp_replace(col("pull_request_updated_at"), "Z", ""), "T", " ")
+        )
+      )
+      .withColumn(
+        "different_time_pullrequest",
+        when(
+          col("updated_at_second").isNotNull && col("created_at_second").isNotNull,
+          round((col("updated_at_second") - col("created_at_second")) / 3600, 2)
+        )
+          .otherwise(0)
+      )
       .select(
         col("pull_request_id"),
         col("pull_request_head_repo.id").as("head_branch_id"),
@@ -115,7 +120,7 @@ object PullRequestFactETL {
         col("different_time_pullrequest")
       )
 
-     println("cantidad rows staging:" + pullRequestStaging.count())
+    println("cantidad rows staging:" + pullRequestStaging.count())
 
     val pullRequestFact1 = pullRequestStaging
       .as("stagingPullFact")
@@ -129,7 +134,7 @@ object PullRequestFactETL {
       .withColumn("pk_id_pull", col("pullRequestDim.pk_id"))
       .select("stagingPullFact.*", "pk_id_pull")
 
-     println("cantidad rows pullRequestFact1:" + pullRequestFact1.count())
+    println("cantidad rows pullRequestFact1:" + pullRequestFact1.count())
 
     val pullRequestFact2 = pullRequestFact1
       .as("pullRequestFact1")
@@ -141,7 +146,7 @@ object PullRequestFactETL {
       .withColumn("pk_id_branch_head", col("branchHeadDim.pk_id"))
       .select("pullRequestFact1.*", "pk_id_branch_head")
 
-     println("cantidad rows pullRequestFact2:" + pullRequestFact2.count())
+    println("cantidad rows pullRequestFact2:" + pullRequestFact2.count())
 
     val pullRequestFact3 = pullRequestFact2
       .as("pullRequestFact2")
@@ -153,7 +158,7 @@ object PullRequestFactETL {
       .withColumn("pk_id_branch_base", col("branchBaseDim.pk_id"))
       .select("pullRequestFact2.*", "pk_id_branch_base")
 
-     println("cantidad rows pullRequestFact3:" + pullRequestFact3.count())
+    println("cantidad rows pullRequestFact3:" + pullRequestFact3.count())
 
     val pullRequestFact4 = pullRequestFact3
       .as("pullRequestFact3")
@@ -177,7 +182,7 @@ object PullRequestFactETL {
       .withColumn("pk_id_merged", col("userMerged.pk_id"))
       .select("pullRequestFact4.*", "pk_id_merged")
 
-     println("cantidad rows pullRequestFact5:" + pullRequestFact5.count())
+    println("cantidad rows pullRequestFact5:" + pullRequestFact5.count())
 
     val pullRequestFact6 = pullRequestFact5
       .as("pullRequestFact5")
@@ -236,6 +241,14 @@ object PullRequestFactETL {
       .withColumnRenamed("pk_id_user", "user_id")
       .withColumnRenamed("pk_id_owner", "owner_repo")
       .withColumnRenamed("pk_id_org", "organization_id")
+      .withColumn(
+        "canceled",
+        when(col("state") === "open", "Not available")
+          .otherwise(
+            when(col("merged") === "Is not merged", "Is canceled")
+              .otherwise("Is not canceled")
+          )
+      )
       .withColumn("pk_id", monotonically_increasing_id())
       .na
       .fill(-1)
