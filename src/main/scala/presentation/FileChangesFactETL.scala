@@ -237,7 +237,9 @@ object FileChangesFactETL {
         // "commiter_date",
         // "commiter_parent_date",
         "commiter_date_second",
-        "commiter_parent_date_second"
+        "commiter_parent_date_second",
+        "pull_request_commit_sha",
+        "pull_request_commit_parent_sha"
       )
 
     //fileChangesFactDF3.printSchema(3)
