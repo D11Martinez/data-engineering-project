@@ -231,7 +231,8 @@ object PullRequestFactETL {
         "owner_repo_id",
         "organization_id",
         "created_at_second",
-        "updated_at_second"
+        "updated_at_second",
+        "merge_commit_sha"
       )
       .withColumnRenamed("pk_id_pull", "pull_request_id")
       .withColumnRenamed("pk_id_branch_head", "head_branch")
