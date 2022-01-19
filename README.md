@@ -958,11 +958,14 @@ La capa de presentacion-layer toma como base los datos generados de la capa inte
 ####Componentes usados AWS
 ####S3
 1. A nivel de AWS, se utilizo el aplicativo de S3 donde se definierón una serie de carpetas para poder ir almacenando los datos en base al procesamiento realizado, para tal caso se definierón tres carpetas:
-  * raw-layer
-  * staging-layer
-  * presentation-layer
+* Raw Layer: Almacena los datos crudos recién extraidos de la fuente de datos.
+*	Staging Layer: Capa intermedia donde se encuentra los datos listos para ser transformados dependiendo del fin que éstos tengan.
+*	Presentation Layer: Datos transformados que se utilizan para realizar análisis.
+
 2. La partición de raw-layer contiene los datos a procesar
 
 
 #####IAM
+Es un servicio de Amazon a través de Amazon Web Services que permite controlar el acceso a los demás recursos de AWS. Es posible crear usuarios, roles, políticas, etc. El root user; es decir, el administrador principal de los recursos de AWS, es quien inicialmente crea y brinda permisos a diferentes usuarios. Una buena práctica es utilizar el root user solamente para generar los usuarios y tareas de administración. Para el proyecto se utiliza IAM para brindar permisos a cada uno de los integrantes para acceder al bucket de S3.
+
 Aplicativo con el cual se ha gestionado la creación de usuarios, administración de políticas y permisos para que se pudiese acceder al bucket definido en S3 desde aplicativos externos, como lo fue Databricks. 
