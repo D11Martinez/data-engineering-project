@@ -10,19 +10,19 @@ object MainPresentationETL extends App {
   val OrganizationsOutput = "src/dataset/staging/organizations"
 
   // paths presentation
-  val userDimensionOutput = "src/dataset/presentation/users-dimension"
-  val orgDimensionOutput = "src/dataset/presentation/organizations-dimension"
-  val pullRequestDimensionOutput =
+  val USER_DIMENSION_PATH = "src/dataset/presentation/users-dimension"
+  val ORG_DIMENSION_PATH = "src/dataset/presentation/organizations-dimension"
+  val PULL_REQUEST_DIMENSION_PATH =
     "src/dataset/presentation/pullrequest-dimension"
-  val branchDimensionOutput = "src/dataset/presentation/branch-dimension"
-  val fileDimensionOutput = "src/dataset/presentation/file-dimension"
-  val commitDimensionOutput = "src/dataset/presentation/commit-dimension"
-  val reviewersGroupBridgeOutput =
+  val BRANCH_DIMENSION_PATH = "src/dataset/presentation/branch-dimension"
+  val FILE_DIMENSION_PATH = "src/dataset/presentation/file-dimension"
+  val COMMIT_DIMENSION_PATH = "src/dataset/presentation/commit-dimension"
+  val REVIEWERS_GROUP_BRIDGE_PATH =
     "src/dataset/presentation/reviewersgroup-dimension"
-  val assigneesGroupBridgeOutput =
+  val ASSIGNEES_GROUP_BRIDGE_PATH =
     "src/dataset/presentation/asigneesgroup-dimension"
-  val pullRequestFactTable = "src/dataset/presentation/pullrequest-factTable"
-  val fileChangesFactOutput = "src/dataset/presentation/file-changes-fact"
+  val PULL_REQUEST_FACT_TABLE_PATH = "src/dataset/presentation/pullrequest-factTable"
+  val FILE_CHANGES_FACT_TABLE_PATH = "src/dataset/presentation/file-changes-fact"
 
   val spark = SparkSession.builder
     .master("local[*]")
@@ -38,14 +38,14 @@ object MainPresentationETL extends App {
   val stagingOrg = spark.read.parquet(OrganizationsOutput)
   val stagingUser = spark.read.parquet(userStagingOutput)
   val stagingPullRequest =
-    spark.read.option("inferSchema", true).parquet(eventPayloadStagingOutput)
+    spark.read.option("inferSchema", value = true).parquet(eventPayloadStagingOutput)
 
   OrgDimensionETL
     .getDataFrame(stagingOrg, spark)
     .coalesce(1)
     .write
     .mode(SaveMode.Overwrite)
-    .parquet(orgDimensionOutput)
+    .parquet(ORG_DIMENSION_PATH)
   println("-- ORG DIMENSION COMPLETED --")
 
   UserDimensionETL
@@ -53,7 +53,7 @@ object MainPresentationETL extends App {
     .coalesce(1)
     .write
     .mode(SaveMode.Overwrite)
-    .parquet(userDimensionOutput)
+    .parquet(USER_DIMENSION_PATH)
   println("-- USER DIMENSION COMPLETED --")
 
   PullRequestDimensionETL
@@ -61,7 +61,7 @@ object MainPresentationETL extends App {
     .coalesce(1)
     .write
     .mode(SaveMode.Overwrite)
-    .parquet(pullRequestDimensionOutput)
+    .parquet(PULL_REQUEST_DIMENSION_PATH)
   println("-- PULL REQUEST DIMENSION COMPLETED --")
 
   BranchDimensionETL
@@ -69,15 +69,10 @@ object MainPresentationETL extends App {
     .coalesce(1)
     .write
     .mode(SaveMode.Overwrite)
-    .parquet(branchDimensionOutput)
+    .parquet(BRANCH_DIMENSION_PATH)
   println("-- BRANCH DIMENSION COMPLETED --")
 
-  FileDimensionETL
-    .getDataFrame(stagingPullRequest, spark)
-    .coalesce(1)
-    .write
-    .mode(SaveMode.Overwrite)
-    .parquet(fileDimensionOutput)
+  FileDimensionETL.getDataFrame(stagingPullRequest, spark)
   println("-- FILE DIMENSION COMPLETED --")
 
   CommitDimensionETL
@@ -85,7 +80,7 @@ object MainPresentationETL extends App {
     .coalesce(1)
     .write
     .mode(SaveMode.Overwrite)
-    .parquet(commitDimensionOutput)
+    .parquet(COMMIT_DIMENSION_PATH)
   println("-- COMMIT DIMENSION COMPLETED --")
 
   AssigneesGroupBridgeETL
@@ -93,7 +88,7 @@ object MainPresentationETL extends App {
     .coalesce(1)
     .write
     .mode(SaveMode.Overwrite)
-    .parquet(assigneesGroupBridgeOutput)
+    .parquet(ASSIGNEES_GROUP_BRIDGE_PATH)
   println("-- ASSIGNEES DIMENSION COMPLETED --")
 
   ReviewersGroupBridgeETL
@@ -101,7 +96,7 @@ object MainPresentationETL extends App {
     .coalesce(1)
     .write
     .mode(SaveMode.Overwrite)
-    .parquet(reviewersGroupBridgeOutput)
+    .parquet(REVIEWERS_GROUP_BRIDGE_PATH)
   println("-- REVIEWERS DIMENSION COMPLETED --")
 
   PullRequestFactETL
@@ -109,7 +104,7 @@ object MainPresentationETL extends App {
     .coalesce(1)
     .write
     .mode(SaveMode.Overwrite)
-    .parquet(pullRequestFactTable)
+    .parquet(PULL_REQUEST_FACT_TABLE_PATH)
   println("-- PULL REQUEST FACT TABLE  COMPLETED --")
 
   FileChangesFactETL
@@ -117,7 +112,7 @@ object MainPresentationETL extends App {
     .coalesce(1)
     .write
     .mode(SaveMode.Overwrite)
-    .parquet(fileChangesFactOutput)
+    .parquet(FILE_CHANGES_FACT_TABLE_PATH)
   println("-- FILE CHANGES FACT TABLE  COMPLETED --")
 
 }

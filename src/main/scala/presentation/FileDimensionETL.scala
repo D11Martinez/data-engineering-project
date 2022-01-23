@@ -1,15 +1,28 @@
 package presentation
 
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import presentation.CustomUDF.{getFilePathUDF, getLanguageFromExtension, getLastUDF}
 
 object FileDimensionETL {
-  def getDataFrame(
-      eventPayloadStagingDF: DataFrame,
-      sparkSession: SparkSession
-  ): DataFrame = {
+  val FILE_DIMENSION_PATH = "src/dataset/presentation/file-dimension"
+  val FILE_DIMENSION_TEMP_PATH =
+    "src/dataset/presentation/temp/file-dimension" // This route must exists
+  val fileDimensionSchema: StructType = StructType(
+    Array(
+      StructField("pk_id", LongType, nullable = false),
+      StructField("sha", StringType, nullable = false),
+      StructField("name", StringType, nullable = false),
+      StructField("path", StringType, nullable = false),
+      StructField("extension", StringType, nullable = false),
+      StructField("full_file_name", StringType, nullable = false),
+      StructField("language", StringType, nullable = false)
+    )
+  )
 
+  // Transform the staging data to dimension format without pk_id
+  def transform(eventPayloadStagingDF: DataFrame): DataFrame = {
     val fileDimensionDF =
       eventPayloadStagingDF
         .select(
@@ -102,20 +115,106 @@ object FileDimensionETL {
           "file_extension"
         )
         .distinct()
-        .withColumn("pk_id", monotonically_increasing_id())
         .select("*")
 
-    val fileUndefinedRowDF = sparkSession
-      .createDataFrame(NullDimension.fileDataNull)
-      .toDF(NullDimension.fileColumnNull: _*)
+    fileDimensionDF
+  }
 
-    val fileDimensionWithUndefinedRowDF =
-      fileDimensionDF.unionByName(fileUndefinedRowDF)
+  // load the incoming data from staging layer applying SCD conditions
+  def loadApplyingSCD(
+      dataFromStagingDF: DataFrame,
+      currentDimensionDF: DataFrame,
+      sparkSession: SparkSession
+  ): DataFrame = {
+    val currentFileDimensionDF = currentDimensionDF
+    val filesFromStagingDF = dataFromStagingDF
 
-    fileDimensionWithUndefinedRowDF.printSchema(3)
-    fileDimensionWithUndefinedRowDF.show(10)
+    val tempFileDimDF = if (currentFileDimensionDF.isEmpty) {
+      // reading the null row
+      val fileUndefinedRowDF = sparkSession
+        .createDataFrame(NullDimension.fileDataNull)
+        .toDF(NullDimension.fileColumnNull: _*)
 
-    fileDimensionWithUndefinedRowDF
+      val fileDimWithUndefinedRowDF = filesFromStagingDF
+        .withColumn("pk_id", monotonically_increasing_id())
+        .unionByName(fileUndefinedRowDF)
+
+      val fileDimDF = fileDimWithUndefinedRowDF
+
+      fileDimDF
+    } else {
+      val newFilesDF = filesFromStagingDF
+        .join(
+          currentFileDimensionDF,
+          filesFromStagingDF("sha") === currentFileDimensionDF("sha"), // Joining by natural Key
+          "left_anti"
+        )
+        .withColumn("pk_id", monotonically_increasing_id())
+
+      val editedFilesDF = currentFileDimensionDF
+        .as("current")
+        .join(
+          filesFromStagingDF.as("staging"),
+          filesFromStagingDF("sha") === currentFileDimensionDF("sha"), // Joining by natural Key
+          "inner"
+        )
+        .select(
+          // applying SCD 0
+          col("current.pk_id"),
+          col("current.sha"),
+          col("current.name"),
+          col("current.path"),
+          col("current.extension"),
+          col("current.full_file_name"),
+          col("current.language")
+        )
+
+      val notUpdatedFilesDF = currentFileDimensionDF.join(
+        filesFromStagingDF,
+        filesFromStagingDF("sha") === currentFileDimensionDF("sha"), // Joining by natural Key
+        "left_anti"
+      )
+
+      // Union of all dimension pieces
+      val updatedFileDimDF = newFilesDF
+        .unionByName(editedFilesDF)
+        .unionByName(notUpdatedFilesDF)
+
+      updatedFileDimDF
+    }
+
+    // Returning the final dimension as temporal
+    tempFileDimDF
+  }
+
+  def getDataFrame(
+      eventPayloadStagingDF: DataFrame,
+      sparkSession: SparkSession
+  ): DataFrame = {
+    val currentFileDimensionDF = sparkSession.read
+      .schema(fileDimensionSchema)
+      .parquet(FILE_DIMENSION_PATH)
+
+    val filesFromStagingDF = transform(eventPayloadStagingDF)
+    val tempFileDimDF = loadApplyingSCD(filesFromStagingDF, currentFileDimensionDF, sparkSession)
+
+    // optional
+    tempFileDimDF.printSchema(3)
+    tempFileDimDF.show(10)
+
+    // Write temporal dimension
+    tempFileDimDF.write
+      .mode(SaveMode.Overwrite)
+      .parquet(FILE_DIMENSION_TEMP_PATH)
+
+    // Move temporal dimension to the final dimension
+    sparkSession.read
+      .parquet(FILE_DIMENSION_TEMP_PATH)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet(FILE_DIMENSION_PATH)
+
+    tempFileDimDF
   }
 
 }
