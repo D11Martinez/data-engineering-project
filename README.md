@@ -3,9 +3,9 @@ Proyecto de ETLs del Data source de github
 %md
 ###Staging Layer
 
-#### Transformación de los datos a un nivel inicial
+#### Transformación de los datos de la Raw Layer
 
-El dataset inicial o primario esta compuesto por una cantidad de archivos JSON que llegan a generar un peso de 37.8 GB. Estos archivos JSON contiene la estructura de los **PullRequestEvent**; dicha estuctura mantiene multiples niveles de objetos, entre estos podemos encontrar a nivel de Struct u Array, los cuales es necesario tratarlos para poder dejarlos a un solo nivel, donde es más factible la extracción de información. 
+Los datasets iniciales, correspondientes al Raw Layer; estan compuesto por archivos JSON con un peso total de 37.8 GB, almacenados en el bucket de S3. Estos archivos JSON corresponden a los eventos de Pull Requests de una hora seleccionada en las fechas 1, 15 y último día de cada mes de los años 2018, 2019 y 2020 y tienen la estructura de los **PullRequestEvent**. Dicha estuctura contiene múltiples niveles de objetos, es decir, que hay objetos, structs o arrays dentro de los atributos del dataset. En la etapa de obtención de la Staging Layer, se busca transformarlos a un solo nivel, donde es más sencilla la extracción de datos para posteriormente obtener la Presentation Layer.
 
 Para ello se tiene la siguiente estructura JSON inicial, la cual se desgloza de manera general debido a su tamaño, es decir a un nivel 3
 
@@ -591,7 +591,7 @@ Se ha tratado la forma en que los datos solo sean procesados hasta un cierto niv
 
 #### Reglas de negocio implementadas
 
-El dataset ha tenido un cierto gradod e transformación a nivel de la capa de Stagin-layer, donde solo se tomo en consideración poder obtener la data necesaria para su procesamiento final, sin tener en cuenta el estado de los datos en sí; por lo cual se encuentra en el proceso de tener que aplicar reglas de negocio para asi dar forma a los datos finales los cuales se almacenaran a nivel de las dimensiones. 
+Basandose en los datos pre procesados de la Staging Layer, se aplicarán las reglas de negocio definidas en la siguiente tabla para obtener los valores necesarios que se almacenarán en las dimensiones y fact tables que responderán a las necesidades analíticas del negocio.
 
 |TRANSFORMACIÓN ETL                   |	CAMPO APLICA    |	UBICACIÓN   |  RESULTADO                                            |
 |-------------------------------------|-----------------|-------------- |-------------------------------------------------------|
@@ -713,6 +713,13 @@ Se describen las dimensiones que conforman el modelo dimensional, tanto para Pul
   *	Posee 6 métricas completamente aditivas: additions (número de líneas agregadas), deletions (número de líneas eliminadas), changed_files (número de archivos modificados), commits (número de commits), comments (número de comentarios), review_comments (número de comentarios revisados). 
   *	Posee una dimensión degenerada: state
 
+11.	Asignees Group Bridge
+  * No es una dimensión como tal, sino más bien una tabla que permite eliminar relaciones de mucho a muchos.
+  * Posee dos campos, los cuales indican la relación entre dos dimensiones de muchos a muchos.
+
+12. Reviewers Group Bridge
+  * No es una dimensión como tal, sino más bien una tabla que permite eliminar relaciones de mucho a muchos.
+  * Posee dos campos, los cuales indican la relación entre dos dimensiones de muchos a muchos.
 
 %md
 #### Dimensiones y campos
@@ -950,9 +957,7 @@ Se describen las dimensiones que conforman el modelo dimensional, tanto para Pul
 
 ####Importante
 
-La capa de presentacion-layer toma como base los datos generados de la capa intermedia staging-layer como fuente primaría, para así aplicar las reglas de negocio definidas a nivel de ETL, esto con el fín de poder obtener la información que sera consumida por el aplicativo de Power Bi para realizar la presentación mediante dashboards.
-
-
+La Presentacion Layer toma como base los datos generados de la capa intermedia Staging Layer, para así aplicar las reglas de negocio definidas a nivel de ETL, esto con el fín de poder obtener la información que sera consumida por el aplicativo de Power Bi y realizar la presentación mediante dashboards.
 %md
 
 ####Componentes usados AWS
