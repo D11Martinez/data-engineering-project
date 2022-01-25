@@ -1,18 +1,61 @@
 package presentation
 
-import org.apache.spark.sql.functions.{col, lit, monotonically_increasing_id, when}
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import presentation.CustomUDF.getIntervalCategory
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.expressions.UserDefinedFunction
+import org.apache.spark.sql.functions._
 
 object UserDimensionETL {
-  def getDataFrame(
-      stagingUserDF: DataFrame,
-      sparkSession: SparkSession
-  ): DataFrame = {
 
-    val userDimension = stagingUserDF
+  val userDimensionPath = "src/dataset/presentation/user-dimension"
+  val userDimensionTempPath = val FILE_DIMENSION_TEMP_PATH =
+    "src/dataset/presentation/temp/user-dimension"
+
+      val getIntervalCategory: UserDefinedFunction = udf((quantityStr: String) => {
+    quantityStr.toInt match {
+      case x if 0 until 16 contains x       => "0 - 15"
+      case x if 16 until 51 contains x      => "16 - 50"
+      case x if 51 until 101 contains x     => "51 - 100"
+      case x if 101 until 501 contains x    => "101 - 500"
+      case x if 501 until 1001 contains x   => "501 - 1000"
+      case x if 1001 until 2501 contains x  => "1001 - 2500"
+      case x if 2501 until 5001 contains x  => "2501 - 5000"
+      case x if 5001 until 10001 contains x => "5001 - 10000"
+      case x if x > 10000                   => "10000+"
+      case _                                => "Uncategorized"
+    }
+  })
+
+    val userDimensionSchema: StructType = StructType(
+    Array(
+      StructField("pk_id", LongType, nullable = false),
+      StructField("user_id", StringType, nullable = false),
+      StructField("login", StringType, nullable = false),
+      StructField("email", StringType, nullable = false),
+      StructField("type", StringType, nullable = false),
+      StructField("site_admin", StringType, nullable = false),      
+      StructField("name", StringType, nullable = false),
+      StructField("location", StringType, nullable = false),
+      StructField("hireable", StringType, nullable = false),
+      StructField("bio", StringType, nullable = false),
+      StructField("company", StringType, nullable = false),
+      StructField("blog", StringType, nullable = false),      
+      StructField("twitter_username", StringType, true),
+      StructField("created_at", StringType, nullable = false),
+      StructField("updated_at", StringType, nullable = false),
+      StructField("public_repos", StringType, nullable = false),
+      StructField("followers", StringType, nullable = false),
+      StructField("following", StringType, nullable = false),
+      StructField("followers_category", StringType, nullable = false),
+      StructField("following_category", StringType, nullable = false),
+      StructField("public_repos_category", StringType, nullable = false)
+    )
+  )
+
+  def transform(eventPayloadStagingDF: DataFrame): DataFrame = {
+  val userDimension = eventPayloadStagingDF
       .dropDuplicates("id")
-      .withColumn("pk_id", lit(monotonically_increasing_id()))
       .withColumn("user_id", col("id"))
       .withColumn(
         "email",
@@ -107,7 +150,6 @@ object UserDimensionETL {
           .otherwise(getIntervalCategory(col("public_repos")))
       )
       .select(
-        col("pk_id"),
         col("user_id"),
         col("login"),
         col("type"),
@@ -129,17 +171,115 @@ object UserDimensionETL {
         col("following_category"),
         col("public_repos_category")
       )
+  userDimension
+}
 
-    val userNull = sparkSession
-      .createDataFrame(NullDimension.UserDataNull)
-      .toDF(NullDimension.UserColumnNull: _*)
+  def loadApplyingSCD(
+      dataFromStagingDF: DataFrame,
+      currentDimensionDF: DataFrame,
+      sparkSession: SparkSession
+  ): DataFrame = {
+    val currentUserDimensionDF = currentDimensionDF
+    val usersFromStagingDF = dataFromStagingDF
 
-    val userUnionDF = userDimension.unionByName(userNull)
+    val tempUserDimDF = if (currentUserDimensionDF.isEmpty) {
+      // reading the null row
+      val userUndefinedRowDF = sparkSession
+        .createDataFrame(NullDimension.UserDataNull)
+        .toDF(NullDimension.UserColumnNull: _*)
 
-    userUnionDF.printSchema(3)
-    userUnionDF.show(10)
+      val userDimWithUndefinedRowDF = usersFromStagingDF
+        .withColumn("pk_id", monotonically_increasing_id())
+        .unionByName(userUndefinedRowDF)
 
-    userUnionDF
+      val userDimDF = userDimWithUndefinedRowDF
+
+      userDimDF
+    } else {
+      val newUsersDF = usersFromStagingDF
+        .join(
+          currentUserDimensionDF,
+          usersFromStagingDF("user_id") === currentUserDimensionDF("user_id"), // Joining by natural Key
+          "left_anti"
+        )
+        .withColumn("pk_id", monotonically_increasing_id())
+
+      val editedUsersDF = currentUserDimensionDF
+        .as("current")
+        .join(
+          usersFromStagingDF.as("staging"),
+          usersFromStagingDF("user_id") === currentUserDimensionDF("user_id"), // Joining by natural Key
+          "inner"
+        )
+        .select(
+          // applying SCD 0
+          col("current.pk_id"),
+          col("current.user_id"),
+          col("staging.login"),
+          col("staging.email"),
+          col("current.type"),
+          col("staging.site_admin"),
+          col("staging.name"),
+          col("staging.location"),
+          col("staging.hireable"),
+          col("staging.bio"),
+          col("staging.company"),
+          col("staging.blog"),
+          col("staging.twitter_username"),
+          col("current.created_at"),
+          col("staging.updated_at"),
+          col("staging.public_repos"),          
+          col("staging.followers"),
+          col("staging.following"),      
+          col("staging.followers_category"),
+          col("staging.following_category"),          
+          col("staging.public_repos_category"),              
+        )
+
+      val notUpdatedUsersDF = currentUserDimensionDF.join(
+        usersFromStagingDF,
+        usersFromStagingDF("user_id") === currentUserDimensionDF("user_id"), // Joining by natural Key
+        "left_anti"
+      )
+
+      // Union of all dimension pieces
+      val updatedUserDimDF = newUsersDF
+        .unionByName(editedUsersDF)
+        .unionByName(notUpdatedUsersDF)
+
+      updatedUserDimDF
+    }
+
+    // Returning the final dimension as temporal
+    tempUserDimDF
+  }
+
+  def getDataFrame(
+      eventPayloadStagingDF: DataFrame,
+      sparkSession: SparkSession
+  ): DataFrame = {
+    val currentUserDimensionDF = sparkSession.read
+      .schema(userDimensionSchema)
+      .parquet(userDimensionPath)
+
+val stagingUserDF = spark.read.parquet(userStagingPath)
+
+  val usersFromStagingDF = transform(stagingUserDF)
+  val tempUserDimDF = loadApplyingSCD(usersFromStagingDF, currentUserDimensionDF, sparkSession)
+
+    // Write temporal dimension
+    tempUserDimDF.write
+      .mode(SaveMode.Overwrite)
+      .parquet(userDimensionTempPath)
+
+    // Move temporal dimension to the final dimension
+    sparkSession.read
+      .parquet(userDimensionTempPath)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet(userDimensionPath)
+
+    tempFileDimDF
   }
 
 }
