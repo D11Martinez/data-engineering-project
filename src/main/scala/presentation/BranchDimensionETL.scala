@@ -1,7 +1,8 @@
 package presentation
 
 import org.apache.spark.sql.functions.{col, lit, monotonically_increasing_id, when}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 object BranchDimensionETL {
 
@@ -202,12 +203,12 @@ object BranchDimensionETL {
   def getDataFrame(
       eventPayloadStagingDF: DataFrame,
       sparkSession: SparkSession
-  ): DataFrame = {
+  ): Unit = {
     val currentBranchDimensionDF = sparkSession.read
       .schema(branchDimensionSchema)
       .parquet(branchDimensionPath)
 
-    val eventPayloadStagingDF = spark.read.parquet(eventsPayloadStagingPath)
+    //val eventPayloadStagingDF = sparkSession.read.parquet(eventsPayloadStagingPath)
 
     val branchesFromStagingDF = transform(eventPayloadStagingDF)
     val tempBranchDimDF = loadApplyingSCD(branchesFromStagingDF, currentBranchDimensionDF, sparkSession)
@@ -223,8 +224,6 @@ object BranchDimensionETL {
       .write
       .mode(SaveMode.Overwrite)
       .parquet(branchDimensionPath)
-
-    tempFileDimDF
   }
 
 }

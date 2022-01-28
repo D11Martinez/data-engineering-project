@@ -2,7 +2,6 @@ package presentation
 
 import presentation.CustomUDF.getIntervalCategory
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
@@ -206,20 +205,20 @@ object OrgDimensionETL {
   def getDataFrame(
       eventPayloadStagingDF: DataFrame,
       sparkSession: SparkSession
-  ): DataFrame = {
+  ): Unit = {
     val currentOrgDimensionDF = sparkSession.read
       .schema(orgDimensionSchema)
       .parquet(organizationDimensionPath)
 
-    val eventPayloadStagingDF = spark.read.parquet(organizationStagingPath)
+    //val eventPayloadStagingDF = spark.read.parquet(organizationStagingPath)
 
     val orgsFromStagingDF = transform(eventPayloadStagingDF)
     val tempOrgDimDF = loadApplyingSCD(orgsFromStagingDF, currentOrgDimensionDF, sparkSession)
 
     // Write temporal dimension
-    tempFileDimDF.write
+    tempOrgDimDF.write
       .mode(SaveMode.Overwrite)
-      .parquet(FILE_DIMENSION_TEMP_PATH)
+      .parquet(organizationDimensionTempPath)
 
     // Move temporal dimension to the final dimension
     sparkSession.read
@@ -228,7 +227,6 @@ object OrgDimensionETL {
       .mode(SaveMode.Overwrite)
       .parquet(organizationDimensionPath)
 
-    tempFileDimDF
   }
 
 }

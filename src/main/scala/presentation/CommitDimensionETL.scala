@@ -2,7 +2,7 @@ package presentation
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 import presentation.CustomUDF.validateMessageUDF
 
@@ -246,15 +246,15 @@ object CommitDimensionETL {
   def getDataFrame(
       eventPayloadStagingDF: DataFrame,
       sparkSession: SparkSession
-  ): DataFrame = {
+  ): Unit = {
     
     val currentCommitDimensionDF = sparkSession.read
           .schema(commitDimensionSchema)
           .parquet(commitDimensionPath)
 
-    val stagingCommitDF = spark.read.parquet(eventsPayloadStagingPath)
+    //val stagingCommitDF = spark.read.parquet(eventsPayloadStagingPath)
 
-    val commitsFromStagingDF = transform(stagingCommitDF)
+    val commitsFromStagingDF = transform(eventPayloadStagingDF)
     val tempCommitDimDF = loadApplyingSCD(commitsFromStagingDF, currentCommitDimensionDF, sparkSession)
 
     // Write temporal dimension
@@ -268,7 +268,5 @@ object CommitDimensionETL {
       .write
       .mode(SaveMode.Overwrite)
       .parquet(commitDimensionPath)
-
-    tempFileDimDF
   }
 }

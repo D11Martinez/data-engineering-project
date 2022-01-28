@@ -42,18 +42,10 @@ object MainPresentationETL extends App {
 
   OrgDimensionETL
     .getDataFrame(stagingOrg, spark)
-    .coalesce(1)
-    .write
-    .mode(SaveMode.Overwrite)
-    .parquet(ORG_DIMENSION_PATH)
   println("-- ORG DIMENSION COMPLETED --")
 
   UserDimensionETL
     .getDataFrame(stagingUser, spark)
-    .coalesce(1)
-    .write
-    .mode(SaveMode.Overwrite)
-    .parquet(USER_DIMENSION_PATH)
   println("-- USER DIMENSION COMPLETED --")
 
   PullRequestDimensionETL
@@ -66,10 +58,6 @@ object MainPresentationETL extends App {
 
   BranchDimensionETL
     .getDataFrame(stagingPullRequest, spark)
-    .coalesce(1)
-    .write
-    .mode(SaveMode.Overwrite)
-    .parquet(BRANCH_DIMENSION_PATH)
   println("-- BRANCH DIMENSION COMPLETED --")
 
   FileDimensionETL.getDataFrame(stagingPullRequest, spark)
@@ -77,10 +65,6 @@ object MainPresentationETL extends App {
 
   CommitDimensionETL
     .getDataFrame(stagingPullRequest, spark)
-    .coalesce(1)
-    .write
-    .mode(SaveMode.Overwrite)
-    .parquet(COMMIT_DIMENSION_PATH)
   println("-- COMMIT DIMENSION COMPLETED --")
 
   AssigneesGroupBridgeETL

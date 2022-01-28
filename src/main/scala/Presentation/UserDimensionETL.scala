@@ -9,8 +9,7 @@ import org.apache.spark.sql.functions._
 object UserDimensionETL {
 
   val userDimensionPath = "src/dataset/presentation/user-dimension"
-  val userDimensionTempPath = val FILE_DIMENSION_TEMP_PATH =
-    "src/dataset/presentation/temp/user-dimension"
+  val userDimensionTempPath = "src/dataset/presentation/temp/user-dimension"
 
       val getIntervalCategory: UserDefinedFunction = udf((quantityStr: String) => {
     quantityStr.toInt match {
@@ -255,16 +254,16 @@ object UserDimensionETL {
   }
 
   def getDataFrame(
-      eventPayloadStagingDF: DataFrame,
+     stagingUser: DataFrame,
       sparkSession: SparkSession
-  ): DataFrame = {
+  ): Unit = {
     val currentUserDimensionDF = sparkSession.read
       .schema(userDimensionSchema)
       .parquet(userDimensionPath)
 
-val stagingUserDF = spark.read.parquet(userStagingPath)
+ //val stagingUserDF = spark.read.parquet(stagingUser)
 
-  val usersFromStagingDF = transform(stagingUserDF)
+  val usersFromStagingDF = transform(stagingUser)
   val tempUserDimDF = loadApplyingSCD(usersFromStagingDF, currentUserDimensionDF, sparkSession)
 
     // Write temporal dimension
@@ -279,7 +278,6 @@ val stagingUserDF = spark.read.parquet(userStagingPath)
       .mode(SaveMode.Overwrite)
       .parquet(userDimensionPath)
 
-    tempFileDimDF
   }
 
 }
